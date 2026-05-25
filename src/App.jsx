@@ -74,9 +74,336 @@ const SUITE_STYLES = `
   .field input,.field select{background:#0e1a2b;border:1px solid rgba(201,168,76,.2);color:#f7f2e8;padding:9px 13px;font-size:13px;outline:none;font-family:inherit}
   .field input:focus,.field select:focus{border-color:#c9a84c}
   .form-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+  .q-wrap{min-height:100vh;background:#0e1a2b;display:flex;flex-direction:column}
+  .q-progress{height:3px;background:rgba(201,168,76,.15)}
+  .q-progress-fill{height:3px;background:#c9a84c;transition:width .4s}
+  .q-center{flex:1;display:flex;align-items:center;justify-content:center;padding:40px 20px}
+  .q-card{background:#152338;border:1px solid rgba(201,168,76,.2);width:100%;max-width:640px;padding:48px}
+  .q-num{font-family:'Cinzel',serif;font-size:.58rem;letter-spacing:.3em;color:#c9a84c;text-transform:uppercase;margin-bottom:20px}
+  .q-text{font-family:'Playfair Display',serif;font-size:1.35rem;font-weight:700;color:#f7f2e8;line-height:1.55;margin-bottom:36px}
+  .q-options{display:flex;flex-direction:column;gap:10px}
+  .q-option{background:rgba(14,26,43,.6);border:1.5px solid rgba(201,168,76,.2);padding:14px 20px;font-size:.88rem;color:#d4c9b0;cursor:pointer;transition:all .15s;text-align:left;font-family:'Source Sans 3',sans-serif;display:flex;align-items:center;gap:14px}
+  .q-option:hover{border-color:#c9a84c;color:#f7f2e8;background:rgba(201,168,76,.06)}
+  .q-option.selected{border-color:#c9a84c;background:rgba(201,168,76,.12);color:#f7f2e8}
+  .q-option-dot{width:18px;height:18px;border-radius:50%;border:2px solid rgba(201,168,76,.4);flex-shrink:0;display:flex;align-items:center;justify-content:center;transition:all .15s}
+  .q-option.selected .q-option-dot{background:#c9a84c;border-color:#c9a84c}
+  .q-option-dot-inner{width:7px;height:7px;border-radius:50%;background:#0e1a2b}
+  .report-wrap{background:#0e1a2b;min-height:100vh}
+  .report-content{max-width:760px;margin:0 auto;padding:48px 32px}
+  .tier-badge{display:inline-block;padding:8px 24px;font-family:'Cinzel',serif;font-size:.72rem;font-weight:700;letter-spacing:.2em;text-transform:uppercase;margin-bottom:16px}
+  .score-bar-row{display:flex;align-items:center;gap:16px;margin-bottom:14px}
+  .score-bar-label{font-family:'Cinzel',serif;font-size:.6rem;letter-spacing:.12em;color:#8a9db5;text-transform:uppercase;width:180px;flex-shrink:0}
+  .score-bar-track{flex:1;height:6px;background:rgba(201,168,76,.1);border-radius:3px}
+  .score-bar-fill{height:6px;border-radius:3px;transition:width .8s}
+  .score-bar-pct{font-family:'Cinzel',serif;font-size:.62rem;color:#c9a84c;width:36px;text-align:right}
+  .flag-item{background:rgba(198,40,40,.08);border:1px solid rgba(198,40,40,.2);padding:12px 16px;margin-bottom:8px;font-size:.85rem;color:#d4c9b0;display:flex;gap:10px;align-items:flex-start}
+  .pin-gate{background:#152338;border:1px solid rgba(201,168,76,.2);padding:32px;text-align:center;max-width:400px;margin:0 auto 40px}
+  .pin-input{background:#0e1a2b;border:1.5px solid rgba(201,168,76,.3);padding:13px 16px;font-size:24px;letter-spacing:8px;text-align:center;font-family:'Playfair Display',serif;color:#f7f2e8;outline:none;width:100%;margin:12px 0}
+  .pin-input:focus{border-color:#c9a84c}
 `;
 
-// ── ADMIN DASHBOARD ──────────────────────────────────────────────────────────
+// ── CDAT QUESTIONS ────────────────────────────────────────────────────────────
+const TRAITS = [
+  "Interaction & Friendliness",
+  "Patience & Emotional Control",
+  "Communication & Listening",
+  "Attention to Detail & Focus",
+  "Teamwork & Dependability",
+];
+
+const QUESTIONS = [
+  // Interaction & Friendliness (8 questions, 2 reverse)
+  { id: 1, trait: 0, text: "I enjoy making conversation with people I've just met.", reverse: false },
+  { id: 2, trait: 0, text: "I find it easy to make guests feel welcome and at ease.", reverse: false },
+  { id: 3, trait: 0, text: "I prefer to focus on my work rather than chat with people around me.", reverse: true },
+  { id: 4, trait: 0, text: "I genuinely enjoy working in a people-facing environment every day.", reverse: false },
+  { id: 5, trait: 0, text: "I can maintain a warm, professional attitude even when I'm tired.", reverse: false },
+  { id: 6, trait: 0, text: "I find it draining to be friendly and upbeat for extended periods.", reverse: true },
+  { id: 7, trait: 0, text: "I naturally smile and make eye contact when greeting someone new.", reverse: false },
+  { id: 8, trait: 0, text: "I take pride in creating a positive experience for every person I interact with.", reverse: false },
+  // Patience & Emotional Control (8 questions, 2 reverse)
+  { id: 9, trait: 1, text: "I remain calm when a guest becomes frustrated or raises their voice.", reverse: false },
+  { id: 10, trait: 1, text: "I can handle repeated questions without showing irritation.", reverse: false },
+  { id: 11, trait: 1, text: "When things go wrong, I tend to feel flustered or overwhelmed.", reverse: true },
+  { id: 12, trait: 1, text: "I can maintain composure even when I disagree with someone's behavior.", reverse: false },
+  { id: 13, trait: 1, text: "I rarely let stress from one situation carry over into the next interaction.", reverse: false },
+  { id: 14, trait: 1, text: "I sometimes snap or become short-tempered when under pressure.", reverse: true },
+  { id: 15, trait: 1, text: "I am patient even in slow-moving or repetitive situations.", reverse: false },
+  { id: 16, trait: 1, text: "I can reset my mindset quickly after a difficult guest interaction.", reverse: false },
+  // Communication & Listening (8 questions, 2 reverse)
+  { id: 17, trait: 2, text: "I listen carefully before responding, even when I think I know the answer.", reverse: false },
+  { id: 18, trait: 2, text: "I can explain rules or procedures clearly to someone unfamiliar with them.", reverse: false },
+  { id: 19, trait: 2, text: "I sometimes interrupt people because I already know what they need.", reverse: true },
+  { id: 20, trait: 2, text: "I adjust how I communicate based on who I'm speaking with.", reverse: false },
+  { id: 21, trait: 2, text: "I ask clarifying questions when instructions are unclear.", reverse: false },
+  { id: 22, trait: 2, text: "I tend to talk more than I listen in most conversations.", reverse: true },
+  { id: 23, trait: 2, text: "I can deliver clear information calmly even in a noisy or busy environment.", reverse: false },
+  { id: 24, trait: 2, text: "I make sure the other person understands before I move on.", reverse: false },
+  // Attention to Detail & Focus (8 questions, 2 reverse)
+  { id: 25, trait: 3, text: "I naturally notice small errors or inconsistencies that others might miss.", reverse: false },
+  { id: 26, trait: 3, text: "I can stay focused on a task even when there are distractions around me.", reverse: false },
+  { id: 27, trait: 3, text: "I sometimes lose track of details when I'm managing multiple things at once.", reverse: true },
+  { id: 28, trait: 3, text: "I double-check my work before considering it complete.", reverse: false },
+  { id: 29, trait: 3, text: "I find it easy to keep track of numbers, sequences, or procedural steps.", reverse: false },
+  { id: 30, trait: 3, text: "I tend to work fast and sometimes sacrifice accuracy for speed.", reverse: true },
+  { id: 31, trait: 3, text: "I take procedures seriously and follow them consistently, not just when supervised.", reverse: false },
+  { id: 32, trait: 3, text: "I notice when something is off, even if no one else has pointed it out.", reverse: false },
+  // Teamwork & Dependability (8 questions, 2 reverse)
+  { id: 33, trait: 4, text: "I show up on time and follow through on my commitments consistently.", reverse: false },
+  { id: 34, trait: 4, text: "I am willing to help a coworker even when it's outside my assigned duties.", reverse: false },
+  { id: 35, trait: 4, text: "I prefer working independently rather than relying on others.", reverse: true },
+  { id: 36, trait: 4, text: "My coworkers and supervisors know they can count on me.", reverse: false },
+  { id: 37, trait: 4, text: "I communicate proactively when I anticipate a problem that affects the team.", reverse: false },
+  { id: 38, trait: 4, text: "I sometimes avoid taking on extra responsibility when things get busy.", reverse: true },
+  { id: 39, trait: 4, text: "I take ownership of mistakes rather than deflecting blame.", reverse: false },
+  { id: 40, trait: 4, text: "I contribute positively to team morale, especially during difficult shifts.", reverse: false },
+];
+
+const LABELS = ["Strongly Disagree", "Disagree", "Neutral", "Agree", "Strongly Agree"];
+
+function scoreAnswers(answers) {
+  const traitScores = TRAITS.map(() => ({ raw: 0, max: 0 }));
+  QUESTIONS.forEach(q => {
+    const val = answers[q.id];
+    if (val === undefined) return;
+    const score = q.reverse ? (5 - val) : val;
+    traitScores[q.trait].raw += score;
+    traitScores[q.trait].max += 5;
+  });
+  return traitScores.map((t, i) => ({
+    trait: TRAITS[i],
+    raw: t.raw,
+    max: t.max,
+    pct: Math.round((t.raw / t.max) * 100),
+  }));
+}
+
+function getTier(overall) {
+  if (overall >= 85) return { label: "Eagle Dealer™", color: "#c9a84c", bg: "rgba(201,168,76,.12)", desc: "Exceptional candidate — top-tier behavioral profile." };
+  if (overall >= 70) return { label: "Strong Candidate", color: "#4caf50", bg: "rgba(76,175,80,.1)", desc: "Above average across key dealer traits." };
+  if (overall >= 55) return { label: "Moderate Fit", color: "#E65100", bg: "rgba(230,81,0,.1)", desc: "Some strengths, but notable gaps to address." };
+  return { label: "Not Recommended", color: "#C62828", bg: "rgba(198,40,40,.1)", desc: "Significant behavioral gaps for dealer role." };
+}
+
+function getRedFlags(scores, answers) {
+  const flags = [];
+  scores.forEach(s => { if (s.pct < 50) flags.push(`Low score in ${s.trait} (${s.pct}%) — may struggle in this area.`); });
+  // Consistency check — reverse scored items
+  const reverseQs = QUESTIONS.filter(q => q.reverse);
+  let inconsistent = 0;
+  reverseQs.forEach(q => {
+    const fwd = QUESTIONS.find(f => f.trait === q.trait && !f.reverse && Math.abs(f.id - q.id) < 6);
+    if (fwd && answers[q.id] !== undefined && answers[fwd.id] !== undefined) {
+      const fwdScore = answers[fwd.id];
+      const revScore = 6 - answers[q.id];
+      if (Math.abs(fwdScore - revScore) >= 3) inconsistent++;
+    }
+  });
+  if (inconsistent >= 3) flags.push("Response inconsistency detected — candidate may not have answered thoughtfully.");
+  return flags;
+}
+
+function getInterviewQs(scores) {
+  const qs = [];
+  const sorted = [...scores].sort((a, b) => a.pct - b.pct);
+  sorted.slice(0, 2).forEach(s => {
+    if (s.trait === "Patience & Emotional Control") qs.push("Tell me about a time a guest or customer became upset with you. How did you handle it?");
+    if (s.trait === "Attention to Detail & Focus") qs.push("Describe a situation where catching a small error made a big difference. How do you stay focused during repetitive tasks?");
+    if (s.trait === "Interaction & Friendliness") qs.push("How do you stay energetic and personable at the end of a long shift?");
+    if (s.trait === "Communication & Listening") qs.push("Give an example of when you had to explain something complex to someone unfamiliar with it.");
+    if (s.trait === "Teamwork & Dependability") qs.push("Tell me about a time you went above and beyond to support a coworker or team.");
+  });
+  return qs;
+}
+
+// ── CDAT ASSESSMENT ───────────────────────────────────────────────────────────
+function CDATAssessment({ onComplete, onBack }) {
+  const [current, setCurrent] = useState(0);
+  const [answers, setAnswers] = useState({});
+  const topRef = useRef(null);
+
+  const q = QUESTIONS[current];
+  const progress = Math.round((current / QUESTIONS.length) * 100);
+
+  function selectAnswer(val) {
+    const newAnswers = { ...answers, [q.id]: val };
+    setAnswers(newAnswers);
+    setTimeout(() => {
+      if (current < QUESTIONS.length - 1) {
+        setCurrent(current + 1);
+        topRef.current?.scrollIntoView({ behavior: "smooth" });
+      } else {
+        onComplete(newAnswers);
+      }
+    }, 300);
+  }
+
+  return (
+    <><style>{SUITE_STYLES}</style>
+    <div className="q-wrap" ref={topRef}>
+      <div className="hdr">
+        <div>
+          <div className="hdr-eyebrow">CasinoPro Solutions</div>
+          <div className="hdr-title">CDAT Assessment</div>
+        </div>
+        <div style={{ display: "flex", gap: 10, alignItems: "center" }}>
+          <div className="hdr-badge">Question {current + 1} of {QUESTIONS.length}</div>
+          <button onClick={onBack} className="btn btn-ghost" style={{ fontSize: ".58rem" }}>← Back</button>
+        </div>
+      </div>
+      <div className="q-progress"><div className="q-progress-fill" style={{ width: `${progress}%` }} /></div>
+      <div className="q-center">
+        <div className="q-card">
+          <div className="q-num">
+            {TRAITS[q.trait]} · Question {current + 1} of {QUESTIONS.length}
+          </div>
+          <div className="q-text">{q.text}</div>
+          <div className="q-options">
+            {LABELS.map((label, i) => {
+              const val = i + 1;
+              const selected = answers[q.id] === val;
+              return (
+                <button key={i} className={`q-option${selected ? " selected" : ""}`} onClick={() => selectAnswer(val)}>
+                  <div className="q-option-dot">{selected && <div className="q-option-dot-inner" />}</div>
+                  <span>{label}</span>
+                </button>
+              );
+            })}
+          </div>
+          {current > 0 && (
+            <div style={{ marginTop: 24, textAlign: "center" }}>
+              <button onClick={() => setCurrent(current - 1)} className="btn btn-ghost" style={{ fontSize: ".6rem", padding: "8px 20px" }}>← Previous</button>
+            </div>
+          )}
+        </div>
+      </div>
+    </div></>
+  );
+}
+
+// ── CDAT REPORT ───────────────────────────────────────────────────────────────
+function CDATReport({ answers, property, onBack, onNewCandidate }) {
+  const [pinInput, setPinInput] = useState("");
+  const [pinError, setPinError] = useState("");
+  const [unlocked, setUnlocked] = useState(false);
+  const scores = scoreAnswers(answers);
+  const overall = Math.round(scores.reduce((a, s) => a + s.pct, 0) / scores.length);
+  const tier = getTier(overall);
+  const flags = getRedFlags(scores, answers);
+  const interviewQs = getInterviewQs(scores);
+
+  function tryPin() {
+    if (pinInput === property?.hrPin) { setUnlocked(true); setPinError(""); }
+    else setPinError("Incorrect PIN. Contact CasinoPro Solutions if you need assistance.");
+  }
+
+  return (
+    <><style>{SUITE_STYLES}</style>
+    <div className="report-wrap">
+      <div className="hdr">
+        <div>
+          <div className="hdr-eyebrow">CasinoPro Solutions</div>
+          <div className="hdr-title">CDAT Report</div>
+        </div>
+        <div style={{ display: "flex", gap: 10 }}>
+          <div className="hdr-badge">{property?.propertyName}</div>
+          <button onClick={onNewCandidate} className="btn btn-ghost" style={{ fontSize: ".58rem" }}>New Candidate</button>
+          <button onClick={onBack} className="btn btn-ghost" style={{ fontSize: ".58rem" }}>← Dashboard</button>
+        </div>
+      </div>
+      <div className="report-content">
+
+        {/* Candidate summary */}
+        <div style={{ textAlign: "center", marginBottom: 40 }}>
+          <div style={{ fontFamily: "'Cinzel',serif", fontSize: ".58rem", letterSpacing: ".4em", color: "#c9a84c", textTransform: "uppercase", marginBottom: 12 }}>Assessment Complete</div>
+          <div style={{ fontFamily: "'Playfair Display',serif", fontSize: "2.2rem", fontWeight: 700, color: "#f7f2e8", marginBottom: 8 }}>CDAT Results</div>
+          <div style={{ fontSize: ".88rem", color: "#8a9db5" }}>Casino Dealer Aptitude Assessment Tool</div>
+        </div>
+
+        {/* Overall score — always visible */}
+        <div style={{ background: "#152338", border: `1px solid ${tier.color}`, padding: 32, textAlign: "center", marginBottom: 32 }}>
+          <div style={{ fontFamily: "'Cinzel',serif", fontSize: ".58rem", letterSpacing: ".3em", color: "#8a9db5", textTransform: "uppercase", marginBottom: 12 }}>Overall Score</div>
+          <div style={{ fontFamily: "'Playfair Display',serif", fontSize: "4rem", fontWeight: 700, color: tier.color, lineHeight: 1 }}>{overall}%</div>
+          <div className="tier-badge" style={{ background: tier.bg, color: tier.color, marginTop: 16 }}>{tier.label}</div>
+          <div style={{ fontSize: ".88rem", color: "#8a9db5", marginTop: 8 }}>{tier.desc}</div>
+        </div>
+
+        {/* Trait scores — always visible */}
+        <div style={{ background: "#152338", border: "1px solid rgba(201,168,76,.2)", padding: 28, marginBottom: 32 }}>
+          <div style={{ fontFamily: "'Cinzel',serif", fontSize: ".62rem", letterSpacing: ".3em", color: "#c9a84c", textTransform: "uppercase", marginBottom: 20 }}>Trait Breakdown</div>
+          {scores.map(s => (
+            <div key={s.trait} className="score-bar-row">
+              <div className="score-bar-label">{s.trait}</div>
+              <div className="score-bar-track">
+                <div className="score-bar-fill" style={{ width: `${s.pct}%`, background: s.pct >= 70 ? "#4caf50" : s.pct >= 50 ? "#E65100" : "#C62828" }} />
+              </div>
+              <div className="score-bar-pct">{s.pct}%</div>
+            </div>
+          ))}
+        </div>
+
+        {/* PIN gate for detailed report */}
+        {!unlocked ? (
+          <div className="pin-gate">
+            <div style={{ fontFamily: "'Cinzel',serif", fontSize: ".62rem", letterSpacing: ".3em", color: "#c9a84c", textTransform: "uppercase", marginBottom: 12 }}>HR Access Required</div>
+            <div style={{ fontSize: ".88rem", color: "#8a9db5", marginBottom: 16, lineHeight: 1.6 }}>Enter your HR PIN to unlock the full report including red flags, analysis, and interview questions.</div>
+            <input className="pin-input" type="password" maxLength={4} placeholder="••••" value={pinInput}
+              onChange={e => { setPinInput(e.target.value); setPinError(""); }}
+              onKeyDown={e => e.key === "Enter" && tryPin()} />
+            {pinError && <div style={{ color: "#ef4444", fontSize: ".78rem", marginBottom: 12, fontFamily: "'Cinzel',serif" }}>{pinError}</div>}
+            <button onClick={tryPin} className="btn btn-gold" style={{ width: "100%", fontSize: ".65rem" }}>Unlock Full Report →</button>
+          </div>
+        ) : (
+          <>
+            {/* Red flags */}
+            {flags.length > 0 && (
+              <div style={{ marginBottom: 32 }}>
+                <div style={{ fontFamily: "'Cinzel',serif", fontSize: ".62rem", letterSpacing: ".3em", color: "#ef4444", textTransform: "uppercase", marginBottom: 16 }}>⚠ Red Flags ({flags.length})</div>
+                {flags.map((f, i) => <div key={i} className="flag-item">⚠ {f}</div>)}
+              </div>
+            )}
+            {flags.length === 0 && (
+              <div style={{ background: "rgba(46,125,50,.08)", border: "1px solid rgba(46,125,50,.2)", padding: 16, marginBottom: 32, fontFamily: "'Cinzel',serif", fontSize: ".72rem", color: "#4caf50", letterSpacing: ".05em" }}>
+                ✓ No red flags detected — responses appear consistent and genuine.
+              </div>
+            )}
+
+            {/* HR Analysis */}
+            <div style={{ background: "#152338", border: "1px solid rgba(201,168,76,.2)", padding: 28, marginBottom: 32 }}>
+              <div style={{ fontFamily: "'Cinzel',serif", fontSize: ".62rem", letterSpacing: ".3em", color: "#c9a84c", textTransform: "uppercase", marginBottom: 16 }}>HR Analysis</div>
+              <div style={{ fontSize: ".88rem", color: "#d4c9b0", lineHeight: 1.8 }}>
+                {overall >= 85 && "This candidate demonstrates an exceptional behavioral profile across all five dealer traits. Their responses reflect a natural aptitude for guest interaction, composure under pressure, and professional dependability. Strongly recommended for advancement in the hiring process."}
+                {overall >= 70 && overall < 85 && "This candidate shows a strong overall profile with above-average scores in most trait areas. Minor gaps noted but are consistent with trainable behaviors. Recommended for interview with focused questions on lower-scoring areas."}
+                {overall >= 55 && overall < 70 && "This candidate presents a mixed profile. Strengths exist but are offset by meaningful gaps in key dealer traits. Proceed with caution and use the suggested interview questions to explore potential concerns."}
+                {overall < 55 && "This candidate's behavioral profile raises significant concerns for a dealer role. Low scores across multiple trait areas suggest potential fit challenges. Not recommended without further structured evaluation."}
+              </div>
+            </div>
+
+            {/* Suggested interview questions */}
+            <div style={{ background: "#152338", border: "1px solid rgba(201,168,76,.2)", padding: 28, marginBottom: 32 }}>
+              <div style={{ fontFamily: "'Cinzel',serif", fontSize: ".62rem", letterSpacing: ".3em", color: "#c9a84c", textTransform: "uppercase", marginBottom: 16 }}>Suggested Interview Questions</div>
+              {interviewQs.map((q, i) => (
+                <div key={i} style={{ display: "flex", gap: 12, marginBottom: 14, alignItems: "flex-start" }}>
+                  <div style={{ color: "#c9a84c", fontFamily: "'Cinzel',serif", fontSize: ".7rem", marginTop: 2, flexShrink: 0 }}>{i + 1}.</div>
+                  <div style={{ fontSize: ".88rem", color: "#d4c9b0", lineHeight: 1.7 }}>{q}</div>
+                </div>
+              ))}
+            </div>
+
+            {/* Actions */}
+            <div style={{ display: "flex", gap: 12, justifyContent: "center", flexWrap: "wrap" }}>
+              <button onClick={() => window.print()} className="btn btn-gold" style={{ fontSize: ".65rem" }}>Print Report ◆</button>
+              <button onClick={onNewCandidate} className="btn btn-navy" style={{ fontSize: ".65rem" }}>New Candidate →</button>
+              <button onClick={onBack} className="btn btn-ghost" style={{ fontSize: ".65rem" }}>← Back to Dashboard</button>
+            </div>
+          </>
+        )}
+      </div>
+    </div></>
+  );
+}
+
+// ── ADMIN DASHBOARD ───────────────────────────────────────────────────────────
 function AdminDashboard({ onClose }) {
   const [codes, setCodes] = useState(getCodes());
   const [newCode, setNewCode] = useState("");
@@ -136,30 +463,18 @@ function AdminDashboard({ onClose }) {
         </div>
       </div>
       <div className="content">
-
-        {/* Stats */}
         <div className="stat-grid">
-          {[
-            [entries.length, "Total Properties"],
-            [activeProps, "Active Properties"],
-            [totalUsed, "Total Assessments Run"],
-            [trialExpired, "Trials Expired"],
-          ].map(([n, l]) => (
-            <div className="stat-card" key={l}>
-              <span className="stat-num">{n}</span>
-              <span className="stat-lbl">{l}</span>
-            </div>
+          {[[entries.length, "Total Properties"],[activeProps, "Active Properties"],[totalUsed, "Total Assessments Run"],[trialExpired, "Trials Expired"]].map(([n, l]) => (
+            <div className="stat-card" key={l}><span className="stat-num">{n}</span><span className="stat-lbl">{l}</span></div>
           ))}
         </div>
-
-        {/* Add new code */}
         <div style={{ background: "#152338", border: "1px solid rgba(201,168,76,.2)", padding: 24, marginBottom: 32 }}>
           <div style={{ fontFamily: "'Cinzel',serif", fontSize: ".62rem", letterSpacing: ".3em", color: "#c9a84c", textTransform: "uppercase", marginBottom: 16 }}>Add New Property</div>
           <div className="form-grid" style={{ marginBottom: 12 }}>
             {[["Property Code", newCode, setNewCode, "e.g. ARIA2025"], ["Property Name", newName, setNewName, "e.g. Aria Resort"], ["Contact Name", newContact, setNewContact, "HR Director"], ["Contact Email", newEmail, setNewEmail, "hr@casino.com"]].map(([l, v, set, ph]) => (
               <div className="field" key={l}>
                 <label>{l}</label>
-                <input value={v} onChange={e => set(l === "Property Code" || l === "Contact Email" ? e.target.value : e.target.value)} onInput={l === "Property Code" ? e => e.target.value = e.target.value.toUpperCase() : undefined} placeholder={ph} />
+                <input value={v} onChange={e => set(e.target.value)} onInput={l === "Property Code" ? e => e.target.value = e.target.value.toUpperCase() : undefined} placeholder={ph} />
               </div>
             ))}
           </div>
@@ -174,8 +489,6 @@ function AdminDashboard({ onClose }) {
           {msg && <div style={{ color: "#c9a84c", fontSize: ".82rem", marginBottom: 12, fontFamily: "'Cinzel',serif", letterSpacing: ".05em" }}>{msg}</div>}
           <button onClick={addCode} className="btn btn-gold" style={{ fontSize: ".62rem" }}>Add Property Code ◆</button>
         </div>
-
-        {/* Property list */}
         <div style={{ fontFamily: "'Cinzel',serif", fontSize: ".62rem", letterSpacing: ".3em", color: "#c9a84c", textTransform: "uppercase", marginBottom: 16 }}>Active Properties ({entries.length})</div>
         {entries.length === 0 ? (
           <div style={{ textAlign: "center", padding: "40px 0", color: "#8a9db5", fontSize: ".88rem" }}>No property codes yet. Add your first one above.</div>
@@ -201,11 +514,7 @@ function AdminDashboard({ onClose }) {
                         {rec.email && <div style={{ fontSize: ".72rem", color: "#8a9db5" }}>{rec.email}</div>}
                       </td>
                       <td><strong style={{ fontFamily: "'Playfair Display',serif", fontSize: 15, color: "#c9a84c" }}>{rec.hrPin}</strong></td>
-                      <td>
-                        <span style={{ fontSize: ".72rem", fontFamily: "'Cinzel',serif", letterSpacing: ".1em", textTransform: "uppercase", color: expired ? "#C62828" : rec.plan === "unlimited" ? "#c9a84c" : "#d4c9b0" }}>
-                          {expired ? "EXPIRED" : rec.plan}
-                        </span>
-                      </td>
+                      <td><span style={{ fontSize: ".72rem", fontFamily: "'Cinzel',serif", letterSpacing: ".1em", textTransform: "uppercase", color: expired ? "#C62828" : rec.plan === "unlimited" ? "#c9a84c" : "#d4c9b0" }}>{expired ? "EXPIRED" : rec.plan}</span></td>
                       <td>
                         <div style={{ fontSize: 15, fontWeight: 700, color: "#f7f2e8" }}>{rec.used || 0}</div>
                         {rec.plan !== "unlimited" && <div style={{ marginTop: 4, height: 3, background: "rgba(201,168,76,.1)", width: 60 }}><div style={{ height: 3, background: expired ? "#C62828" : "#c9a84c", width: `${pct}%` }} /></div>}
@@ -239,6 +548,7 @@ export default function App() {
   const [codeInput, setCodeInput] = useState("");
   const [codeError, setCodeError] = useState("");
   const [logoClickCount, setLogoClickCount] = useState(0);
+  const [cdatAnswers, setCdatAnswers] = useState(null);
   const topRef = useRef(null);
   const scrollTop = () => topRef.current?.scrollIntoView({ behavior: "smooth" });
 
@@ -261,10 +571,46 @@ export default function App() {
     setProperty(rec); setPropertyCode(code); setPhase("suite"); scrollTop();
   }
 
-  // Admin
+  function launchCDAT() {
+    incrementUsage(propertyCode);
+    // Refresh property from storage to get updated used count
+    const updated = getCode(propertyCode);
+    setProperty(updated);
+    setCdatAnswers(null);
+    setPhase("cdat");
+    scrollTop();
+  }
+
+  function handleCDATComplete(answers) {
+    setCdatAnswers(answers);
+    setPhase("cdat-report");
+    scrollTop();
+  }
+
+  function handleNewCandidate() {
+    setCdatAnswers(null);
+    setPhase("suite");
+    scrollTop();
+  }
+
   if (phase === "admin") return <AdminDashboard onClose={() => setPhase("codegate")} />;
 
-  // Upgrade screen
+  if (phase === "cdat") return (
+    <CDATAssessment
+      onComplete={handleCDATComplete}
+      onBack={() => setPhase("suite")}
+    />
+  );
+
+  if (phase === "cdat-report") return (
+    <CDATReport
+      answers={cdatAnswers}
+      property={property}
+      onBack={() => setPhase("suite")}
+      onNewCandidate={handleNewCandidate}
+    />
+  );
+
   if (phase === "upgrade") return (
     <><style>{SUITE_STYLES}</style>
     <div className="upgrade-wrap">
@@ -280,7 +626,6 @@ export default function App() {
     </div></>
   );
 
-  // Code gate
   if (phase === "codegate") return (
     <><style>{SUITE_STYLES}</style>
     <div className="gate-wrap" ref={topRef}>
@@ -320,7 +665,6 @@ export default function App() {
     </div></>
   );
 
-  // Suite dashboard
   if (phase === "suite") {
     const limit = property?.plan === "unlimited" ? Infinity : (property?.freeLimit || FREE_LIMIT);
     const used = property?.used || 0;
@@ -361,7 +705,7 @@ export default function App() {
           )}
 
           <div className="suite-grid">
-            <div className="suite-card featured" onClick={() => { if (remaining === 0) return; incrementUsage(propertyCode); window.open("https://casinoprosolutions.com/cdat/", "_blank"); }} style={{ opacity: remaining === 0 ? .5 : 1, cursor: remaining === 0 ? "not-allowed" : "pointer" }}>
+            <div className="suite-card featured" onClick={() => remaining !== 0 && launchCDAT()} style={{ opacity: remaining === 0 ? .5 : 1, cursor: remaining === 0 ? "not-allowed" : "pointer" }}>
               <div className="suite-card-badge">◆ Available Now</div>
               <div className="suite-card-name">CDAT</div>
               <div className="suite-card-sub">Casino Dealer Aptitude Assessment Tool</div>
@@ -375,7 +719,7 @@ export default function App() {
               <button className="btn btn-gold" style={{ fontSize: ".62rem" }} disabled={remaining === 0}>Launch CDAT →</button>
             </div>
 
-            <div className="suite-card" onClick={() => { if (remaining === 0) return; incrementUsage(propertyCode); window.open("https://casinoprosolutions.com/dpat-assessment/", "_blank"); }} style={{ opacity: remaining === 0 ? .5 : 1, cursor: remaining === 0 ? "not-allowed" : "pointer" }}>
+            <div className="suite-card" onClick={() => remaining !== 0 && window.open("https://casinoprosolutions.com/dpat-assessment/", "_blank")} style={{ opacity: remaining === 0 ? .5 : 1, cursor: remaining === 0 ? "not-allowed" : "pointer" }}>
               <div className="suite-card-badge">◆ Available Now</div>
               <div className="suite-card-name">DPAT</div>
               <div className="suite-card-sub">Dealer Performance Aptitude Tool</div>
