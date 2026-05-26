@@ -1000,21 +1000,7 @@ export default function App() {
             </div>
           </div>
 
-          <div style={{ margin: "32px 0", display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 20 }}>
-  {[
-    { num: "Win¹", label: "The Guests Win", desc: "Guests who feel welcomed, entertained, and respected stay longer and come back. A great dealer interaction is the single most powerful driver of guest loyalty." },
-    { num: "Win²", label: "The Dealers Win", desc: "Dealers who genuinely engage guests earn more in tokes, receive stronger evaluations, and build a reputation on the floor that advances their career." },
-    { num: "Win³", label: "The Casino Wins", desc: "Properties with engaged, guest-focused dealers see longer playing sessions, higher return visit rates, and stronger word-of-mouth." },
-  ].map(w => (
-    <div key={w.num} style={{ background: "#152338", border: "1px solid rgba(201,168,76,.2)", padding: 28, textAlign: "center" }}>
-      <div style={{ fontFamily: "'Playfair Display',serif", fontSize: "2.2rem", fontWeight: 700, color: "#c9a84c", marginBottom: 8 }}>{w.num}</div>
-      <div style={{ fontFamily: "'Cinzel',serif", fontSize: ".58rem", letterSpacing: ".25em", textTransform: "uppercase", color: "#f7f2e8", marginBottom: 12 }}>{w.label}</div>
-      <div style={{ fontSize: ".82rem", color: "#8a9db5", lineHeight: 1.7 }}>{w.desc}</div>
-    </div>
-  ))}
-</div>
-
-<div style={{ textAlign: "center", fontSize: ".75rem", color: "#8a9db5", borderTop: "1px solid rgba(201,168,76,.1)", paddingTop: 24 }}>
+         <div style={{ textAlign: "center", fontSize: ".75rem", color: "#8a9db5", borderTop: "1px solid rgba(201,168,76,.1)", paddingTop: 24 }}>
             Both assessments share your property code and HR PIN.<br />
             Questions? Contact <strong style={{ color: "#c9a84c" }}>rocky@casinoprosolutions.com</strong>
           </div>
