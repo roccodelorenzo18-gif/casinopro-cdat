@@ -1,246 +1,1273 @@
+import { useState, useEffect, useRef, useCallback } from "react";
 
-<!DOCTYPE html>
-<html lang="en">
-<head>
-<meta charset="UTF-8"/>
-<meta name="viewport" content="width=device-width,initial-scale=1"/>
-<link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;700&family=Playfair+Display:ital,wght@0,700;1,400&family=Source+Sans+3:wght@300;400;500&display=swap" rel="stylesheet"/>
-<style>
-*{margin:0;padding:0;box-sizing:border-box}
-:root{
-  --navy:#0e1a2b;--navy-mid:#152338;--navy-lt:#1e3050;
-  --gold:#c9a84c;--gold-lt:#e3c478;
-  --cream:#f7f2e8;--muted:#8a9db5;--text:#d4c9b0;
+// ── PDF GENERATION ────────────────────────────────────────────────────────────
+async function loadJsPDF() {
+  if (window.jspdf) return window.jspdf.jsPDF;
+  return new Promise((resolve, reject) => {
+    const s = document.createElement("script");
+    s.src = "https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js";
+    s.onload = () => resolve(window.jspdf.jsPDF);
+    s.onerror = reject;
+    document.head.appendChild(s);
+  });
 }
-body{font-family:'Source Sans 3',sans-serif;background:var(--navy);color:var(--cream)}
 
-.page-hero{background:var(--navy-mid);padding:70px 60px;border-bottom:1px solid rgba(201,168,76,.2);text-align:center;}
-.eyebrow{font-family:'Cinzel',serif;font-size:.65rem;letter-spacing:.4em;color:var(--gold);text-transform:uppercase;margin-bottom:16px;display:block;}
-.hero-title{font-family:'Playfair Display',serif;font-size:3rem;font-weight:700;color:var(--cream);line-height:1.1;margin-bottom:16px;}
-.hero-title em{font-style:italic;color:var(--gold)}
-.hero-sub{font-size:1rem;color:var(--text);max-width:580px;margin:0 auto;line-height:1.8;font-weight:300;}
-.ornament{display:flex;align-items:center;gap:12px;justify-content:center;margin:28px auto;}
-.ornament::before,.ornament::after{content:'';flex:1;max-width:80px;height:1px;background:linear-gradient(to right,transparent,var(--gold));}
-.ornament::after{background:linear-gradient(to left,transparent,var(--gold))}
-.ornament-diamond{width:7px;height:7px;background:var(--gold);transform:rotate(45deg)}
+async function generateHRPdf(applicant, results) {
+  const JsPDF = await loadJsPDF();
+  const doc = new JsPDF({ unit: "mm", format: "a4" });
+  const pw = 210, lm = 18, rm = 18, cw = pw - lm - rm;
+  let y = 0;
 
-.section{padding:80px 60px;}
-.section-tag{font-family:'Cinzel',serif;font-size:.62rem;letter-spacing:.4em;color:var(--gold);text-transform:uppercase;margin-bottom:12px;display:block;}
-.section-title{font-family:'Playfair Display',serif;font-size:2.2rem;font-weight:700;color:var(--cream);line-height:1.2;margin-bottom:12px;}
-.section-title em{font-style:italic;color:var(--gold)}
-.section-lead{font-size:.95rem;color:var(--text);line-height:1.8;font-weight:300;max-width:680px;margin-bottom:48px;}
+  const gold  = [184,134,11];  const dark  = [17,24,39];
+  const mid   = [55,65,81];    const muted = [107,114,128];
+  const green = [5,150,105];   const amber = [217,119,6];
+  const red   = [220,38,38];   const white = [255,255,255];
+  const bg    = [247,248,250]; const border= [232,234,237];
 
-.assessment-grid{display:grid;grid-template-columns:1fr 1fr;gap:24px;}
-.assessment-card{background:var(--navy-mid);border:2px solid #c9a84c;padding:40px;position:relative;transition:border-color .25s,transform .2s;}
-.assessment-card:hover{border-color:rgba(201,168,76,.8);transform:translateY(-3px)}
-.card-title{font-family:'Playfair Display',serif;font-size:1.5rem;font-weight:700;color:var(--cream);margin-bottom:6px;}
-.card-subtitle{font-family:'Cinzel',serif;font-size:.62rem;letter-spacing:.15em;color:var(--gold);text-transform:uppercase;margin-bottom:20px;}
-.card-desc{font-size:.9rem;color:var(--text);line-height:1.8;font-weight:300;margin-bottom:24px;}
-.card-features{list-style:none;margin-bottom:0;}
-.card-features li{font-size:.85rem;color:var(--text);padding:8px 0;border-bottom:1px solid rgba(201,168,76,.08);display:flex;gap:10px;align-items:flex-start;line-height:1.5;}
-.card-features li::before{content:'◆';color:var(--gold);font-size:.45rem;flex-shrink:0;margin-top:5px;}
-.btn-gold{display:inline-block;background:var(--gold);color:var(--navy);font-family:'Cinzel',serif;font-size:.65rem;font-weight:700;letter-spacing:.18em;text-transform:uppercase;padding:12px 28px;text-decoration:none;transition:background .25s;}
-.btn-gold:hover{background:var(--gold-lt);}
-.btn-ghost{display:inline-block;border:1px solid rgba(201,168,76,.3);color:var(--muted);font-family:'Cinzel',serif;font-size:.65rem;letter-spacing:.18em;text-transform:uppercase;padding:12px 28px;text-decoration:none;}
+  const { traitResults, overall, recommendation, totalRedFlags, inconsistencies, interviewQs } = results;
+  const mins = Math.floor(results.timeTaken / 60), secs = results.timeTaken % 60;
 
-.section-divider{height:1px;background:linear-gradient(to right,transparent,rgba(201,168,76,.2),transparent);margin:0 60px;}
+  function recCol() {
+    return recommendation === "RECOMMEND TO HIRE" ? green
+         : recommendation === "PROCEED WITH CAUTION" ? amber : red;
+  }
+  function traitCol(p) { return p >= 75 ? green : p >= 55 ? amber : red; }
 
-.gate-wrap{padding:48px 60px;background:var(--navy-mid);border-top:1px solid rgba(201,168,76,.15);}
-.gate-eyebrow{font-family:'Cinzel',serif;font-size:.58rem;letter-spacing:.35em;color:var(--gold);text-transform:uppercase;margin-bottom:8px;display:block;}
-.gate-heading{font-family:'Playfair Display',serif;font-size:1.6rem;font-weight:700;color:var(--cream);margin-bottom:6px;}
-.gate-sub{font-size:.88rem;color:var(--muted);margin-bottom:28px;line-height:1.6;}
-.gate-box{background:rgba(14,26,43,.6);border:1px solid rgba(201,168,76,.25);padding:32px;max-width:700px;margin:0 auto;}
-.gate-top{display:flex;align-items:flex-start;justify-content:space-between;gap:16px;margin-bottom:20px;}
-.gate-status-locked{display:inline-flex;align-items:center;gap:6px;font-family:'Cinzel',serif;font-size:.58rem;letter-spacing:.15em;color:var(--muted);background:rgba(138,157,181,.1);border:1px solid rgba(138,157,181,.2);padding:5px 14px;white-space:nowrap;}
-.gate-status-unlocked{display:inline-flex;align-items:center;gap:6px;font-family:'Cinzel',serif;font-size:.58rem;letter-spacing:.15em;color:#5dcaa5;background:rgba(93,202,165,.1);border:1px solid rgba(93,202,165,.25);padding:5px 14px;white-space:nowrap;}
-.gate-label{font-family:'Cinzel',serif;font-size:.58rem;letter-spacing:.2em;color:var(--gold);text-transform:uppercase;margin-bottom:4px;}
-.gate-title{font-size:1rem;font-weight:500;color:var(--cream);margin-bottom:3px;}
-.gate-hint{font-size:.82rem;color:var(--muted);}
-.gate-input-row{display:flex;gap:10px;}
-.gate-input{flex:1;background:rgba(255,255,255,.04);border:1px solid rgba(201,168,76,.3);padding:12px 16px;font-size:.95rem;color:var(--cream);font-family:'Courier New',monospace;letter-spacing:.06em;outline:none;min-width:0;}
-.gate-input::placeholder{color:#2a3a4e;}
-.gate-input:focus{border-color:rgba(201,168,76,.7);}
-.gate-enter{background:var(--gold);color:var(--navy);border:none;font-family:'Cinzel',serif;font-size:.62rem;font-weight:700;letter-spacing:.18em;text-transform:uppercase;padding:12px 24px;cursor:pointer;white-space:nowrap;transition:background .2s;}
-.gate-enter:hover{background:var(--gold-lt);}
-.gate-error{margin-top:8px;font-size:.82rem;color:#e07070;display:none;}
-.gate-error a{color:#e07070;}
-.gate-nocode{margin-top:10px;font-size:.8rem;color:var(--muted);}
-.gate-nocode a{color:var(--gold);text-decoration:none;}
-.gate-nocode a:hover{text-decoration:underline;}
-.gate-session-info{font-size:.85rem;color:var(--muted);margin-bottom:16px;}
-.gate-session-info .s-code{color:var(--cream);font-family:'Courier New',monospace;letter-spacing:.04em;}
-.gate-btns{display:flex;gap:12px;flex-wrap:wrap;}
-.gate-signout{margin-top:12px;font-size:.78rem;color:var(--muted);cursor:pointer;background:none;border:none;padding:0;text-decoration:underline;font-family:'Source Sans 3',sans-serif;}
-.gate-signout:hover{color:var(--gold);}
+  // HEADER BAND
+  doc.setFillColor(...[17,24,39]); doc.rect(0,0,pw,28,"F");
+  doc.setFillColor(...gold);       doc.rect(0,26,pw,2,"F");
+  doc.setFont("helvetica","bold"); doc.setFontSize(18); doc.setTextColor(...white);
+  doc.text("CDAT", lm, 13);
+  doc.setFontSize(9); doc.setFont("helvetica","normal"); doc.setTextColor(180,180,180);
+  doc.text("Casino Dealer Aptitude Assessment  |  CONFIDENTIAL HR REPORT", lm+22, 13);
+  doc.setTextColor(...gold); doc.setFontSize(8);
+  doc.text("FOR AUTHORIZED PERSONNEL ONLY", pw-rm, 20, { align:"right" });
+  y = 36;
 
-.training-section{background:var(--navy-mid);}
-.program-hero{background:linear-gradient(135deg,var(--navy-lt) 0%,var(--navy-mid) 100%);border:1px solid rgba(201,168,76,.2);padding:48px;margin-bottom:40px;position:relative;overflow:hidden;}
-.program-hero::before{content:'WIN³';position:absolute;right:-20px;top:-10px;font-family:'Playfair Display',serif;font-size:8rem;font-weight:900;color:rgba(201,168,76,.04);pointer-events:none;line-height:1;}
-.program-badge{display:inline-flex;align-items:center;gap:8px;background:var(--gold);color:var(--navy);font-family:'Cinzel',serif;font-size:.6rem;font-weight:700;letter-spacing:.2em;padding:5px 14px;margin-bottom:20px;}
-.program-title{font-family:'Playfair Display',serif;font-size:2rem;font-weight:700;color:var(--cream);margin-bottom:8px;line-height:1.2;}
-.program-subtitle{font-family:'Cinzel',serif;font-size:.65rem;letter-spacing:.2em;color:var(--gold);text-transform:uppercase;margin-bottom:20px;}
-.program-desc{font-size:.95rem;color:var(--text);line-height:1.8;font-weight:300;max-width:680px;margin-bottom:24px;}
+  // CANDIDATE STRIP
+  doc.setFillColor(...bg); doc.setDrawColor(...border); doc.setLineWidth(0.3);
+  doc.roundedRect(lm, y, cw, 22, 3, 3, "FD");
+  doc.setFont("helvetica","bold"); doc.setFontSize(13); doc.setTextColor(...dark);
+  doc.text(applicant.name, lm+6, y+8);
+  doc.setFont("helvetica","normal"); doc.setFontSize(9); doc.setTextColor(...muted);
+  doc.text(applicant.position, lm+6, y+14);
+  [["Date",applicant.date],["Time Taken",`${mins}m ${secs}s`],["HR Contact",applicant.hrEmail]].forEach(([label,val],i)=>{
+    const x = lm + (cw/3)*i + cw/3/2 + 40;
+    doc.setFont("helvetica","bold"); doc.setFontSize(7); doc.setTextColor(...muted);
+    doc.text(label.toUpperCase(), x, y+8, {align:"center"});
+    doc.setFont("helvetica","bold"); doc.setFontSize(9); doc.setTextColor(...dark);
+    doc.text(val, x, y+15, {align:"center"});
+  });
+  y += 30;
 
-.{display:grid;grid-template-columns:repeat(3,1fr);gap:20px;margin-bottom:40px;}
-.win-card{background:rgba(14,26,43,.6);border:1px solid rgba(201,168,76,.15);padding:28px 24px;text-align:center;}
-.win-num{font-family:'Playfair Display',serif;font-size:2.5rem;font-weight:700;color:var(--gold);display:block;margin-bottom:4px;}
-.win-label{font-family:'Cinzel',serif;font-size:.7rem;letter-spacing:.2em;color:var(--cream);text-transform:uppercase;margin-bottom:8px;display:block;}
-.win-desc{font-size:.82rem;color:var(--muted);line-height:1.6;}
+  // SCORE BOX + TRAIT BARS
+  const scoreBoxW = 58, radarBoxW = cw - scoreBoxW - 6;
+  doc.setFillColor(...white); doc.setDrawColor(...recCol()); doc.setLineWidth(0.5);
+  doc.roundedRect(lm, y, scoreBoxW, 38, 3, 3, "FD");
+  doc.setFont("helvetica","bold"); doc.setFontSize(7); doc.setTextColor(...muted);
+  doc.text("OVERALL COMPOSITE SCORE", lm+scoreBoxW/2, y+6, {align:"center"});
+  doc.setFont("helvetica","bold"); doc.setFontSize(34); doc.setTextColor(...recCol());
+  doc.text(`${overall}%`, lm+scoreBoxW/2, y+22, {align:"center"});
+  const pillY = y+27;
+  doc.setFillColor(...recCol()); doc.roundedRect(lm+6, pillY, scoreBoxW-12, 7, 2, 2, "F");
+  doc.setFont("helvetica","bold"); doc.setFontSize(7); doc.setTextColor(...white);
+  doc.text(recommendation, lm+scoreBoxW/2, pillY+5, {align:"center"});
+  if (totalRedFlags>0) {
+    doc.setFont("helvetica","bold"); doc.setFontSize(7); doc.setTextColor(...red);
+    doc.text(`${totalRedFlags} red flag${totalRedFlags>1?"s":""}`, lm+scoreBoxW/2, y+37, {align:"center"});
+  }
 
-.modules-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px;}
-.module-card{background:rgba(14,26,43,.5);border:1px solid rgba(201,168,76,.12);padding:20px 24px;display:flex;gap:16px;align-items:flex-start;transition:border-color .25s;}
-.module-card:hover{border-color:rgba(201,168,76,.35)}
-.module-num{font-family:'Cinzel',serif;font-size:.6rem;letter-spacing:.2em;color:var(--gold);flex-shrink:0;margin-top:2px;}
-.module-title{font-family:'Cinzel',serif;font-size:.7rem;letter-spacing:.1em;color:var(--cream);text-transform:uppercase;margin-bottom:4px;}
-.module-desc{font-size:.8rem;color:var(--muted);line-height:1.6;}
+  const bx = lm+scoreBoxW+6;
+  doc.setFillColor(...white); doc.setDrawColor(...border); doc.setLineWidth(0.3);
+  doc.roundedRect(bx, y, radarBoxW, 38, 3, 3, "FD");
+  doc.setFont("helvetica","bold"); doc.setFontSize(7); doc.setTextColor(...gold);
+  doc.text("TRAIT BREAKDOWN", bx+6, y+6);
+  traitResults.forEach((r,i) => {
+    const by = y+11+i*5.6, barX = bx+52, barW = radarBoxW-58, barH = 3;
+    doc.setFont("helvetica","normal"); doc.setFontSize(7); doc.setTextColor(...mid);
+    doc.text(r.trait.name.length>22?r.trait.name.slice(0,22)+"…":r.trait.name, bx+6, by+2.5);
+    doc.setFillColor(...border); doc.roundedRect(barX, by, barW, barH, 1,1,"F");
+    doc.setFillColor(...traitCol(r.pct)); doc.roundedRect(barX, by, barW*r.pct/100, barH, 1,1,"F");
+    doc.setFont("helvetica","bold"); doc.setFontSize(7); doc.setTextColor(...traitCol(r.pct));
+    doc.text(`${r.pct}%`, bx+radarBoxW-5, by+2.5, {align:"right"});
+  });
+  y += 44;
 
-.outcomes-section{background:var(--navy);padding:80px 60px;}
-.outcomes-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:20px;margin-top:40px;}
-.outcome-card{background:var(--navy-mid);border:1px solid rgba(201,168,76,.15);padding:28px 20px;text-align:center;}
-.outcome-icon{font-size:1.5rem;margin-bottom:12px;display:block;}
-.outcome-title{font-family:'Cinzel',serif;font-size:.65rem;letter-spacing:.15em;color:var(--gold);text-transform:uppercase;margin-bottom:8px;}
-.outcome-desc{font-size:.8rem;color:var(--muted);line-height:1.6;}
+  // RED FLAGS
+  const flags = traitResults.filter(r=>r.redFlags.length>0);
+  if (flags.length>0) {
+    doc.setFillColor(254,242,242); doc.setDrawColor(254,202,202); doc.setLineWidth(0.3);
+    doc.roundedRect(lm,y,cw,8,2,2,"FD");
+    doc.setFont("helvetica","bold"); doc.setFontSize(8); doc.setTextColor(...red);
+    doc.text(`RED FLAGS DETECTED (${totalRedFlags})`, lm+5, y+5.5);
+    y += 12;
+    flags.forEach(r => {
+      doc.setFont("helvetica","bold"); doc.setFontSize(8); doc.setTextColor(...red);
+      doc.text(r.trait.name, lm+4, y+4); y += 7;
+      r.redFlags.forEach(f => {
+        doc.setFillColor(254,242,242); doc.roundedRect(lm+2,y,cw-4,8,1,1,"F");
+        doc.setDrawColor(...red); doc.setLineWidth(0.5); doc.line(lm+2,y,lm+2,y+8);
+        doc.setFont("helvetica","normal"); doc.setFontSize(7.5); doc.setTextColor(...red);
+        const lines = doc.splitTextToSize(`"${f}"`, cw-12);
+        doc.text(lines, lm+6, y+4.5); y += lines.length*4+6;
+      });
+    });
+    y += 4;
+  }
 
-.cta-section{background:var(--navy-mid);padding:60px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:24px;border-top:1px solid rgba(201,168,76,.15);text-align:center;}
-.cta-text h3{font-family:'Playfair Display',serif;font-size:1.6rem;color:var(--cream);margin-bottom:6px;}
-.cta-text p{font-size:.9rem;color:var(--muted);}
-.cta-buttons{display:flex;gap:12px;flex-wrap:wrap;justify-content:center;}
+  // CONSISTENCY
+  if (inconsistencies.length>0) {
+    doc.setFillColor(255,251,235); doc.setDrawColor(253,230,138); doc.setLineWidth(0.3);
+    doc.roundedRect(lm,y,cw,8,2,2,"FD");
+    doc.setFont("helvetica","bold"); doc.setFontSize(8); doc.setTextColor(...amber);
+    doc.text(`CONSISTENCY ISSUES (${inconsistencies.length} pair${inconsistencies.length>1?"s":""})`, lm+5, y+5.5);
+    y += 12;
+    inconsistencies.forEach((inc,i) => {
+      doc.setFillColor(255,251,235); doc.setDrawColor(...amber); doc.setLineWidth(0.3);
+      const l1 = doc.splitTextToSize(`"${inc.q1}"`, cw-10);
+      const l2 = doc.splitTextToSize(`"${inc.q2}"`, cw-10);
+      const boxH = l1.length*4 + l2.length*4 + 16;
+      doc.roundedRect(lm,y,cw,boxH,2,2,"FD");
+      doc.setFont("helvetica","bold"); doc.setFontSize(7); doc.setTextColor(...amber);
+      doc.text(`${inc.trait}  ·  Pair ${i+1}`, lm+5, y+5);
+      doc.setFont("helvetica","normal"); doc.setFontSize(7.5); doc.setTextColor(...mid);
+      doc.text(l1, lm+5, y+10);
+      doc.setTextColor(...muted); doc.text("contradicts ↕", lm+cw/2, y+10+l1.length*4, {align:"center"});
+      doc.setTextColor(...mid); doc.text(l2, lm+5, y+14+l1.length*4);
+      y += boxH+4;
+    });
+    y += 4;
+  }
 
-@media(max-width:900px){
-  .assessment-grid,.,.modules-grid,.outcomes-grid{grid-template-columns:1fr;}
-  .section,.training-section,.outcomes-section,.cta-section{padding:48px 24px;}
-  .page-hero{padding:48px 24px;}
-  .section-divider{margin:0 24px;}
-  .gate-wrap{padding:40px 24px;}
-  .gate-input-row{flex-direction:column;}
+  // INTERVIEW PAGE
+  if (interviewQs.length>0) {
+    doc.addPage(); y = 18;
+    doc.setFillColor(...[17,24,39]); doc.rect(0,0,pw,14,"F");
+    doc.setFont("helvetica","bold"); doc.setFontSize(9); doc.setTextColor(...white);
+    doc.text("CDAT  |  SUGGESTED INTERVIEW QUESTIONS", lm, 9);
+    doc.setTextColor(...gold); doc.setFontSize(8);
+    doc.text(applicant.name+"  ·  "+applicant.position, pw-rm, 9, {align:"right"});
+    y = 24;
+    doc.setFont("helvetica","normal"); doc.setFontSize(8.5); doc.setTextColor(...muted);
+    doc.text("Generated for traits scoring below 70% or triggering red flags.", lm, y);
+    y += 8;
+    interviewQs.forEach(group => {
+      doc.setFont("helvetica","bold"); doc.setFontSize(10); doc.setTextColor(...gold);
+      doc.text(group.traitName, lm, y);
+      doc.setDrawColor(232,213,163); doc.setLineWidth(0.3); doc.line(lm,y+1.5,lm+cw,y+1.5);
+      y += 6;
+      group.questions.forEach((q,qi) => {
+        const lines = doc.splitTextToSize(q, cw-16);
+        const boxH = lines.length*4.5+6;
+        doc.setFillColor(...bg); doc.setDrawColor(...border); doc.setLineWidth(0.2);
+        doc.roundedRect(lm,y,cw,boxH,2,2,"FD");
+        doc.setFont("helvetica","bold"); doc.setFontSize(8); doc.setTextColor(...gold);
+        doc.text(`${qi+1}.`, lm+4, y+5);
+        doc.setFont("helvetica","normal"); doc.setTextColor(...mid);
+        doc.text(lines, lm+10, y+5); y += boxH+3;
+      });
+      y += 4;
+    });
+    doc.setFillColor(253,248,236); doc.setDrawColor(232,213,163);
+    doc.roundedRect(lm,y,cw,12,2,2,"FD");
+    doc.setFont("helvetica","bold"); doc.setFontSize(8); doc.setTextColor(...gold);
+    doc.text("Interviewer Tip:", lm+5, y+5);
+    doc.setFont("helvetica","normal"); doc.setTextColor(...mid);
+    const tip = doc.splitTextToSize("Listen for specific past examples (S-T-A-R format), emotional regulation under pressure, and alignment with casino floor expectations.", cw-40);
+    doc.text(tip, lm+30, y+5);
+  }
+
+  // FOOTER
+  const pageCount = doc.internal.getNumberOfPages();
+  for (let p=1; p<=pageCount; p++) {
+    doc.setPage(p); doc.setFillColor(...[17,24,39]); doc.rect(0,290,pw,8,"F");
+    doc.setFont("helvetica","normal"); doc.setFontSize(7); doc.setTextColor(140,140,140);
+    doc.text(`CDAT © ${new Date().getFullYear()}  ·  Confidential  ·  For Authorized Personnel Only`, lm, 295);
+    doc.text(`Page ${p} of ${pageCount}`, pw-rm, 295, {align:"right"});
+  }
+
+  const filename = `CDAT_${applicant.name.replace(/\s+/g,"_")}_${applicant.date.replace(/,?\s+/g,"_")}.pdf`;
+  doc.save(filename);
+  return filename;
 }
-</style>
-</head>
-<body>
 
-<div class="page-hero">
-  <span class="eyebrow">CasinoPro Solutions</span>
-  <h1 class="hero-title">Assessments <em>&</em> Training</h1>
-  <div class="ornament"><div class="ornament-diamond"></div></div>
-  <p class="hero-sub">Most casinos measure dealer performance by what they can see. CasinoPro Solutions measures what actually matters — the behavioral traits that determine whether a guest stays at your table, comes back to your property, and brings people with them.</p>
-</div>
+// ── SHAREABLE HR LINK ─────────────────────────────────────────────────────────
+function buildHRLink(applicant, results) {
+  const payload = {
+    a: applicant,
+    r: {
+      overall: results.overall,
+      recommendation: results.recommendation,
+      timeTaken: results.timeTaken,
+      totalRedFlags: results.totalRedFlags,
+      traitResults: results.traitResults.map(t => ({ id: t.trait.id, name: t.trait.name, abbr: t.trait.abbr, pct: t.pct, redFlags: t.redFlags })),
+      inconsistencies: results.inconsistencies,
+      interviewQs: results.interviewQs,
+    }
+  };
+  const encoded = btoa(unescape(encodeURIComponent(JSON.stringify(payload))));
+  const base = window.location.href.split("?")[0].split("#")[0];
+  return `${base}?hr=${encoded}`;
+}
 
-<div class="section">
-  <span class="section-tag">Our Assessments</span>
-  <h2 class="section-title">Know Who You're Hiring <em>Before</em> They Step Behind the Table</h2>
-  <p class="section-lead">A guest who feels unwelcome at your table doesn't complain — they leave, they tell people, and they find another casino. CasinoPro Solutions assessment tools are built to identify the behavioral traits that predict genuine guest engagement before a single shift begins.</p>
+function parseHRLink() {
+  const params = new URLSearchParams(window.location.search);
+  const hr = params.get("hr");
+  if (!hr) return null;
+  try {
+    return JSON.parse(decodeURIComponent(escape(atob(hr))));
+  } catch { return null; }
+}
 
-  <div class="assessment-grid">
+// ── DATA ──────────────────────────────────────────────────────────────────────
 
-    <div class="assessment-card">
-      <div class="card-title">CDAT</div>
-      <div class="card-subtitle">Casino Dealer Aptitude Assessment Tool</div>
-      <p class="card-desc">A 40-question behavioral assessment that evaluates five traits proven to predict dealer success. Designed for casino HR departments to screen new applicants before they step behind the table.</p>
-      <ul class="card-features">
-        <li>5 behavioral traits — from Emotional Control to Professional Composure</li>
-        <li>40 validated questions with reverse scoring to ensure accuracy</li>
-        <li>PIN-gated HR report with scored trait breakdown and hire guidance</li>
-        <li>Property code access — embed on your career site or HR portal</li>
-        <li>7-minute timed assessment — candidate-friendly and efficient</li>
-      </ul>
+const TRAITS = [
+  {
+    id:"interaction", name:"Interaction & Friendliness", abbr:"I&F",
+    questions:[
+      {id:"i1",text:"I enjoy talking and interacting with people from different backgrounds.",reversed:false,redFlag:false},
+      {id:"i2",text:"I greet people with a genuine smile, even when I am physically tired.",reversed:false,redFlag:false},
+      {id:"i3",text:"I understand that part of my job is to make others feel comfortable, even when I'm having a bad day.",reversed:false,redFlag:false},
+      {id:"i4",text:"When someone is being rude or difficult, I can keep the interaction positive without losing my composure.",reversed:false,redFlag:true},
+      {id:"i5",text:"I make a conscious effort to remain warm and welcoming toward people.",reversed:false,redFlag:false},
+      {id:"i6",text:"I find it difficult to remain friendly when someone is visibly rude to me.",reversed:true,redFlag:true},
+      {id:"i7",text:"I tend to keep to myself when I feel stressed or overwhelmed.",reversed:true,redFlag:true},
+      {id:"i8",text:"I struggle to hide my true feelings when I am annoyed.",reversed:true,redFlag:true},
+    ],
+  },
+  {
+    id:"patience", name:"Patience & Emotional Control", abbr:"P&E",
+    questions:[
+      {id:"p1",text:"I follow established procedures exactly, even when I know a faster way.",reversed:false,redFlag:false},
+      {id:"p2",text:"I can perform the same task with the same level of care and attention.",reversed:false,redFlag:false},
+      {id:"p3",text:"I can separate my personal feelings about a situation in the moment.",reversed:false,redFlag:false},
+      {id:"p4",text:"I stay calm and professional, even when someone is rude or confrontational.",reversed:false,redFlag:true},
+      {id:"p5",text:"I can remain patient when the same question or problem comes up repeatedly.",reversed:false,redFlag:false},
+      {id:"p6",text:"I tend to lose patience when I must deal with the same issue repeatedly.",reversed:true,redFlag:true},
+      {id:"p7",text:"I tend to let my emotions get the best of me.",reversed:true,redFlag:true},
+      {id:"p8",text:"I find it difficult to stay calm when I feel overwhelmed.",reversed:true,redFlag:true},
+    ],
+  },
+  {
+    id:"communication", name:"Communication & Listening", abbr:"C&L",
+    questions:[
+      {id:"c1",text:"I make sure I understand instructions before acting.",reversed:false,redFlag:false},
+      {id:"c2",text:"I stay focused on what someone is saying, even with distractions.",reversed:false,redFlag:false},
+      {id:"c3",text:"I listen carefully to instructions and follow them accordingly.",reversed:false,redFlag:false},
+      {id:"c4",text:"I ask questions when I am unsure of something.",reversed:false,redFlag:false},
+      {id:"c5",text:"I can explain things clearly to others.",reversed:false,redFlag:false},
+      {id:"c6",text:"I tend to talk more than I listen in a conversation.",reversed:true,redFlag:true},
+      {id:"c7",text:"I sometimes miss important details when listening to instructions.",reversed:true,redFlag:true},
+      {id:"c8",text:"I find it difficult to stay patient when I must explain the same thing repeatedly.",reversed:true,redFlag:false},
+    ],
+  },
+  {
+    id:"attention", name:"Attention to Detail & Focus", abbr:"A&F",
+    questions:[
+      {id:"a1",text:"When I'm under pressure, I still prioritize accuracy over speed.",reversed:false,redFlag:false},
+      {id:"a2",text:"I perform basic mental math (addition/multiplication) quickly and accurately.",reversed:false,redFlag:false},
+      {id:"a3",text:"I tend to catch errors before they become bigger problems.",reversed:false,redFlag:false},
+      {id:"a4",text:"I remain consistent and precise, even during long or repetitive tasks.",reversed:false,redFlag:false},
+      {id:"a5",text:"I double-check my work instinctively, even when I am in a hurry.",reversed:false,redFlag:false},
+      {id:"a6",text:"I find it difficult to keep track of multiple things happening at once.",reversed:true,redFlag:true},
+      {id:"a7",text:"I find my concentration slipping after 30 minutes of a detailed task.",reversed:true,redFlag:true},
+      {id:"a8",text:"I overlook small but important details when I am trying to work quickly.",reversed:true,redFlag:true},
+    ],
+  },
+  {
+    id:"teamwork", name:"Teamwork & Dependability", abbr:"T&D",
+    questions:[
+      {id:"t1",text:"When I commit to something, I follow through on it.",reversed:false,redFlag:false},
+      {id:"t2",text:"I admit mistakes immediately rather than trying to fix them quietly.",reversed:false,redFlag:true},
+      {id:"t3",text:"Others can rely on me to follow through on my responsibilities.",reversed:false,redFlag:false},
+      {id:"t4",text:"I support my team, even when it requires extra effort on my part.",reversed:false,redFlag:false},
+      {id:"t5",text:"I adapt quickly to changes in schedules, procedures, or expectations.",reversed:false,redFlag:false},
+      {id:"t6",text:"I hesitate to take initiative or accept new responsibilities.",reversed:true,redFlag:true},
+      {id:"t7",text:"I prefer to focus only on my own responsibilities rather than helping others.",reversed:true,redFlag:true},
+      {id:"t8",text:"I feel frustrated when asked to perform a task outside of my usual routine.",reversed:true,redFlag:true},
+    ],
+  },
+];
+
+const LIKERT = [
+  {label:"Never",       value:1},
+  {label:"Rarely",      value:2},
+  {label:"Sometimes",   value:3},
+  {label:"Often",       value:4},
+  {label:"Always",      value:5},
+];
+
+const TIMER_SECONDS = 7 * 60;
+
+const CONSISTENCY_PAIRS = [
+  ["i4","i6"],["i5","i8"],["i3","i7"],
+  ["p4","p7"],["p5","p6"],["p3","p8"],
+  ["c2","c7"],["c3","c6"],
+  ["a1","a8"],["a4","a7"],["a5","a6"],
+  ["t1","t6"],["t4","t7"],["t5","t8"],
+];
+
+const INTERVIEW_QUESTIONS = {
+  interaction:[
+    "Tell me about a time you had to stay warm and friendly with a guest who was being difficult. What did you do?",
+    "How do you reset emotionally between guest interactions when you're having a tough day?",
+    "Describe a situation where you had to mask your frustration. How did you handle it?",
+  ],
+  patience:[
+    "Walk me through how you stay calm when a guest is repeatedly confrontational.",
+    "How do you maintain the same level of attention during a long, repetitive shift?",
+    "Tell me about a time your emotions almost got the better of you at work. What happened?",
+  ],
+  communication:[
+    "Describe a time you had to explain a complex rule or process to someone unfamiliar with it.",
+    "How do you ensure you've fully understood instructions before acting on them?",
+    "Tell me about a time you missed an important detail. What was the outcome?",
+  ],
+  attention:[
+    "How do you maintain accuracy when you're working quickly under pressure?",
+    "Tell me about a time you caught an error before it became a bigger problem.",
+    "How do you handle tracking multiple things happening simultaneously at the table?",
+  ],
+  teamwork:[
+    "Describe a time you had to admit a mistake immediately. How did your team respond?",
+    "Tell me about a time you went beyond your usual role to help a colleague.",
+    "How do you adapt when procedures or schedules change unexpectedly?",
+  ],
+};
+
+const POSITIONS = [
+  "Casino Dealer – Table Games",
+  "Casino Dealer – Blackjack",
+  "Casino Dealer – Poker",
+  "Casino Dealer – Roulette",
+  "Casino Dealer – Baccarat",
+  "Casino Dealer – Craps",
+  "Dual-Rate Dealer",
+  "Other / Not Listed",
+];
+
+// ── DESIGN TOKENS ─────────────────────────────────────────────────────────────
+const C = {
+  white:      "#FFFFFF",
+  bg:         "#F7F8FA",
+  border:     "#E8EAED",
+  gold:       "#B8860B",
+  goldBg:     "#FDF8EC",
+  goldBorder: "#E8D5A3",
+  text:       "#111827",
+  textMid:    "#374151",
+  textMuted:  "#6B7280",
+  textFaint:  "#9CA3AF",
+  green:      "#059669",
+  greenBg:    "#ECFDF5",
+  greenBorder:"#A7F3D0",
+  amber:      "#D97706",
+  amberBg:    "#FFFBEB",
+  amberBorder:"#FDE68A",
+  red:        "#DC2626",
+  redBg:      "#FEF2F2",
+  redBorder:  "#FECACA",
+  shadow:     "0 1px 3px rgba(0,0,0,0.08), 0 1px 2px rgba(0,0,0,0.04)",
+  shadowMd:   "0 4px 6px rgba(0,0,0,0.07), 0 2px 4px rgba(0,0,0,0.04)",
+  shadowLg:   "0 10px 15px rgba(0,0,0,0.06), 0 4px 6px rgba(0,0,0,0.04)",
+};
+
+// ── UTILS ─────────────────────────────────────────────────────────────────────
+function shuffle(arr) {
+  const a = [...arr];
+  for (let i = a.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [a[i], a[j]] = [a[j], a[i]];
+  }
+  return a;
+}
+
+function scoreQ(q, raw) { return q.reversed ? 6 - raw : raw; }
+
+function calcResults(answers) {
+  const allQMap = {};
+  TRAITS.forEach(t => t.questions.forEach(q => allQMap[q.id] = q));
+
+  const traitResults = TRAITS.map(trait => {
+    let total = 0, redFlags = [];
+    trait.questions.forEach(q => {
+      const raw = answers[q.id]; if (!raw) return;
+      const scored = scoreQ(q, raw); total += scored;
+      if (q.redFlag && scored <= 2) redFlags.push(q.text);
+    });
+    const pct = Math.round((total / (trait.questions.length * 5)) * 100);
+    return { trait, total, pct, redFlags };
+  });
+
+  const inconsistencies = [];
+  CONSISTENCY_PAIRS.forEach(([fwdId, revId]) => {
+    const fwdQ = allQMap[fwdId], revQ = allQMap[revId];
+    if (!fwdQ || !revQ) return;
+    const fwdRaw = answers[fwdId], revRaw = answers[revId];
+    if (!fwdRaw || !revRaw) return;
+    const fwdScored = scoreQ(fwdQ, fwdRaw), revScored = scoreQ(revQ, revRaw);
+    if (Math.abs(fwdScored - revScored) >= 3)
+      inconsistencies.push({ q1: fwdQ.text, q2: revQ.text, trait: TRAITS.find(t => t.questions.find(q => q.id === fwdId))?.name });
+  });
+
+  const overall = Math.round(traitResults.reduce((s, r) => s + r.pct, 0) / traitResults.length);
+  const totalRedFlags = traitResults.reduce((s, r) => s + r.redFlags.length, 0);
+
+  const interviewQs = [];
+  traitResults.forEach(r => {
+    if (r.pct < 70 || r.redFlags.length > 0)
+      interviewQs.push({ traitName: r.trait.name, questions: INTERVIEW_QUESTIONS[r.trait.id] });
+  });
+
+  let recommendation, recColor, recBg, recBorder;
+  if (overall >= 75 && totalRedFlags === 0 && inconsistencies.length === 0) {
+    recommendation = "RECOMMEND TO HIRE"; recColor = C.green; recBg = C.greenBg; recBorder = C.greenBorder;
+  } else if (overall >= 60 && totalRedFlags <= 2 && inconsistencies.length <= 2) {
+    recommendation = "PROCEED WITH CAUTION"; recColor = C.amber; recBg = C.amberBg; recBorder = C.amberBorder;
+  } else {
+    recommendation = "DO NOT RECOMMEND"; recColor = C.red; recBg = C.redBg; recBorder = C.redBorder;
+  }
+
+  return { traitResults, overall, recommendation, recColor, recBg, recBorder, totalRedFlags, inconsistencies, interviewQs };
+}
+
+function traitColor(p) { return p >= 75 ? C.green : p >= 55 ? C.amber : C.red; }
+function traitLabel(p) { return p >= 75 ? "Strong" : p >= 55 ? "Moderate" : "Needs Improvement"; }
+function traitBg(p)    { return p >= 75 ? C.greenBg : p >= 55 ? C.amberBg : C.redBg; }
+function traitBorder(p){ return p >= 75 ? C.greenBorder : p >= 55 ? C.amberBorder : C.redBorder; }
+
+// ── TOP BAR ───────────────────────────────────────────────────────────────────
+function TopBar({ right }) {
+  return (
+    <div style={{ background: C.white, borderBottom: `1px solid ${C.border}`, height: 56, display: "flex", alignItems: "center", justifyContent: "space-between", padding: "0 32px", position: "sticky", top: 0, zIndex: 50, boxShadow: C.shadow }}>
+      <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+        <span style={{ fontSize: 18 }}>🃏</span>
+        <span style={{ fontFamily: "'Playfair Display',Georgia,serif", fontSize: 17, fontWeight: 700, color: C.gold, letterSpacing: 2 }}>CDAT</span>
+        <span style={{ fontSize: 12, color: C.textFaint, marginLeft: 4 }}>Casino Dealer Aptitude Assessment</span>
+      </div>
+      {right}
     </div>
+  );
+}
 
-    <div class="assessment-card">
-      <div class="card-title">DPAT</div>
-      <div class="card-subtitle">Dealer Performance Aptitude Tool</div>
-      <p class="card-desc">A structured written assessment for experienced dealer candidates — measuring how they think, decide, and respond under real floor pressure before they step behind a table.</p>
-      <ul class="card-features">
-        <li>Candidate-completed format on HR's computer — no evaluator bias in the response</li>
-        <li>10 behavioral trait questions across guest interaction, composure, integrity, accountability, and professionalism</li>
-        <li>18 situational judgment scenarios across game protection, table control, and ethical decision-making</li>
-        <li>Silent background timer with HR-visible completion flag</li>
-        <li>PIN-gated HR review panel with ideal answer markers and per-scenario scoring</li>
-        <li>Auto-generated PDF report with Eagle Dealer™ tier classification — downloaded in one click</li>
-      </ul>
+// ── TIMER ─────────────────────────────────────────────────────────────────────
+function Timer({ seconds, onExpire }) {
+  const [left, setLeft] = useState(seconds);
+  useEffect(() => {
+    if (left <= 0) { onExpire(); return; }
+    const id = setInterval(() => setLeft(l => l - 1), 1000);
+    return () => clearInterval(id);
+  }, [left]);
+  const m = String(Math.floor(left / 60)).padStart(2, "0");
+  const s = String(left % 60).padStart(2, "0");
+  const urgent = left <= 60;
+  const pct = (left / seconds) * 100;
+  return (
+    <div style={{ display: "flex", alignItems: "center", gap: 8, background: urgent ? C.redBg : C.goldBg, border: `1px solid ${urgent ? C.redBorder : C.goldBorder}`, borderRadius: 8, padding: "6px 12px" }}>
+      <svg viewBox="0 0 32 32" style={{ width: 26, height: 26, transform: "rotate(-90deg)", flexShrink: 0 }}>
+        <circle cx="16" cy="16" r="12" fill="none" stroke={urgent ? "#FECACA" : "#E8D5A3"} strokeWidth="2.5" />
+        <circle cx="16" cy="16" r="12" fill="none" stroke={urgent ? C.red : C.gold} strokeWidth="2.5"
+          strokeDasharray={`${2 * Math.PI * 12}`}
+          strokeDashoffset={`${2 * Math.PI * 12 * (1 - pct / 100)}`}
+          style={{ transition: "stroke-dashoffset 1s linear" }} />
+      </svg>
+      <span style={{ fontFamily: "'Courier New',monospace", fontSize: 17, fontWeight: 700, color: urgent ? C.red : C.gold, letterSpacing: 2, animation: urgent ? "timerPulse 0.8s infinite" : "none" }}>
+        {m}:{s}
+      </span>
     </div>
+  );
+}
 
-  </div>
-</div>
+// ── WELCOME PAGE ──────────────────────────────────────────────────────────────
+function Welcome({ onContinue }) {
+  const today = new Date().toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" });
+  const [form, setForm] = useState({ name: "", position: "", date: today, hrEmail: "" });
+  const [errors, setErrors] = useState({});
 
-<div style="text-align:center;padding:48px 60px;background:#152338;border-top:1px solid rgba(201,168,76,.15);">
-  <p style="font-family:'Cinzel',serif;font-size:.62rem;letter-spacing:.4em;color:#c9a84c;text-transform:uppercase;margin-bottom:12px;">Client Access Portal</p>
-  <p style="font-size:.95rem;color:#8a9db5;margin-bottom:28px;line-height:1.7;max-width:520px;margin-left:auto;margin-right:auto;">Licensed casino properties — enter your property code to access both the CDAT and DPAT assessment tools.</p>
-  <a href="https://casinoprosolutions.com/dealer-assessments" style="display:inline-block;background:#c9a84c;color:#0e1a2b;font-family:'Cinzel',serif;font-size:.65rem;font-weight:700;letter-spacing:.18em;text-transform:uppercase;padding:14px 32px;text-decoration:none;">Access Your Assessment Suite ◆</a>
-</div>
-<div class="section training-section">
-  <span class="section-tag">Dealer Training</span>
-  <h2 class="section-title">The Dealer Is Already Hired. <em>Now What?</em></h2>
-  <p class="section-lead">The CDAT identifies the right dealers before they're hired. But what about the dealers already on your floor? The Win-Win-Win program is the answer — an in-person training experience that transforms how dealers think about their role, their guests, and the revenue they directly influence every shift.</p>
+  function handleSubmit() {
+    const e = {};
+    if (!form.name.trim()) e.name = "Please enter your full name.";
+    if (!form.position) e.position = "Please select a position.";
+    if (!form.hrEmail.trim()) e.hrEmail = "Please enter the HR contact email.";
+    else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.hrEmail)) e.hrEmail = "Please enter a valid email address.";
+    if (Object.keys(e).length > 0) { setErrors(e); return; }
+    onContinue(form);
+  }
 
-  <div class="program-hero">
-    <div class="program-badge">◆ In-Person Dealer Training</div>
-    <div class="program-title">Win-Win-Win</div>
-    <div class="program-subtitle">Guest Interaction & Dealer Excellence Training</div>
-    <p class="program-desc">Most dealers understand the technical side of their job. What they rarely understand is the business impact of how they treat guests. A guest who feels unwelcome at your table doesn't complain — they leave, they tell people, and they find another casino. The Win-Win-Win program changes that by showing dealers exactly what their behavior costs the property — and what it earns them personally.</p>
+  const labelStyle = { display: "block", fontSize: 11, fontWeight: 600, color: C.textMuted, letterSpacing: 1.5, textTransform: "uppercase", marginBottom: 6 };
+  const inputStyle = (err) => ({ width: "100%", background: C.white, border: `1.5px solid ${err ? C.red : C.border}`, borderRadius: 8, padding: "11px 14px", fontSize: 14, color: C.text, fontFamily: "inherit", outline: "none", transition: "border-color 0.15s, box-shadow 0.15s" });
 
-    <div style="background:rgba(201,168,76,.06);border:1px solid rgba(201,168,76,.2);padding:24px 28px;margin-bottom:28px;">
-      <div style="font-family:'Cinzel',serif;font-size:.62rem;letter-spacing:.3em;color:var(--gold);text-transform:uppercase;margin-bottom:14px;">The Problem This Program Solves</div>
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:20px;">
-        <div>
-          <div style="font-family:'Cinzel',serif;font-size:.65rem;letter-spacing:.15em;color:#dc2626;text-transform:uppercase;margin-bottom:8px;">Without Training</div>
-          <div style="font-size:.88rem;color:var(--text);line-height:1.8;">Guests who have a bad dealer experience rarely say a word. They finish their drink, cash out, and go home. Then they tell their friends — and choose a different casino next time. The dealer stays. The revenue bleeds. The casino never knows.</div>
-        </div>
-        <div>
-          <div style="font-family:'Cinzel',serif;font-size:.65rem;letter-spacing:.15em;color:var(--gold);text-transform:uppercase;margin-bottom:8px;">With Win-Win-Win</div>
-          <div style="font-size:.88rem;color:var(--text);line-height:1.8;">Dealers understand exactly how their behavior affects guest decisions, table revenue, and their own toke income. The floor culture shifts. Guests stay longer, come back more often, and bring people — because the experience at your table is one worth talking about.</div>
+  return (
+    <div style={{ minHeight: "100vh", background: C.bg, display: "flex", flexDirection: "column" }}>
+      <TopBar />
+      <div style={{ flex: 1, display: "flex", alignItems: "center", justifyContent: "center", padding: "40px 16px" }}>
+        <div style={{ width: "100%", maxWidth: 500 }}>
+          <div style={{ textAlign: "center", marginBottom: 32 }}>
+            <div style={{ width: 56, height: 56, borderRadius: 16, background: C.goldBg, border: `1.5px solid ${C.goldBorder}`, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 26, margin: "0 auto 16px" }}>🃏</div>
+            <h1 style={{ fontFamily: "'Playfair Display',Georgia,serif", fontSize: 28, fontWeight: 700, color: C.text, margin: "0 0 8px" }}>Welcome</h1>
+            <p style={{ fontSize: 14, color: C.textMuted, margin: 0 }}>Please complete the fields below to begin your assessment.</p>
+          </div>
+
+          <div style={{ background: C.white, borderRadius: 16, border: `1px solid ${C.border}`, boxShadow: C.shadowLg, padding: "32px 36px" }}>
+            <div style={{ marginBottom: 20 }}>
+              <label style={labelStyle}>Full Name</label>
+              <input type="text" placeholder="e.g. Jordan M. Rivers" value={form.name}
+                onChange={e => { setForm(f => ({ ...f, name: e.target.value })); setErrors(er => ({ ...er, name: "" })); }}
+                style={inputStyle(errors.name)}
+                onFocus={e => { e.target.style.borderColor = C.gold; e.target.style.boxShadow = `0 0 0 3px ${C.goldBg}`; }}
+                onBlur={e => { e.target.style.borderColor = errors.name ? C.red : C.border; e.target.style.boxShadow = "none"; }} />
+              {errors.name && <p style={{ fontSize: 12, color: C.red, marginTop: 5 }}>⚠ {errors.name}</p>}
+            </div>
+
+            <div style={{ marginBottom: 20 }}>
+              <label style={labelStyle}>Position Applied For</label>
+              <div style={{ position: "relative" }}>
+                <select value={form.position}
+                  onChange={e => { setForm(f => ({ ...f, position: e.target.value })); setErrors(er => ({ ...er, position: "" })); }}
+                  style={{ ...inputStyle(errors.position), appearance: "none", cursor: "pointer", paddingRight: 36 }}
+                  onFocus={e => { e.target.style.borderColor = C.gold; e.target.style.boxShadow = `0 0 0 3px ${C.goldBg}`; }}
+                  onBlur={e => { e.target.style.borderColor = errors.position ? C.red : C.border; e.target.style.boxShadow = "none"; }}>
+                  <option value="">Select a position…</option>
+                  {POSITIONS.map(p => <option key={p} value={p}>{p}</option>)}
+                </select>
+                <svg style={{ position: "absolute", right: 12, top: "50%", transform: "translateY(-50%)", pointerEvents: "none" }} width="12" height="8" viewBox="0 0 12 8">
+                  <path d="M1 1l5 5 5-5" stroke={C.textFaint} strokeWidth="1.5" fill="none" strokeLinecap="round" />
+                </svg>
+              </div>
+              {errors.position && <p style={{ fontSize: 12, color: C.red, marginTop: 5 }}>⚠ {errors.position}</p>}
+            </div>
+
+            <div style={{ marginBottom: 20 }}>
+              <label style={labelStyle}>Date</label>
+              <input type="text" value={form.date} readOnly style={{ ...inputStyle(false), color: C.textMuted, cursor: "default", background: C.bg }} />
+            </div>
+
+            {/* HR email — labelled clearly as for HR use */}
+            <div style={{ marginBottom: 24 }}>
+              <label style={labelStyle}>HR / Assessor Email</label>
+              <input type="email" placeholder="e.g. hr@casinoname.com" value={form.hrEmail}
+                onChange={e => { setForm(f => ({ ...f, hrEmail: e.target.value })); setErrors(er => ({ ...er, hrEmail: "" })); }}
+                style={inputStyle(errors.hrEmail)}
+                onFocus={e => { e.target.style.borderColor = C.gold; e.target.style.boxShadow = `0 0 0 3px ${C.goldBg}`; }}
+                onBlur={e => { e.target.style.borderColor = errors.hrEmail ? C.red : C.border; e.target.style.boxShadow = "none"; }} />
+              {errors.hrEmail && <p style={{ fontSize: 12, color: C.red, marginTop: 5 }}>⚠ {errors.hrEmail}</p>}
+              <p style={{ fontSize: 11, color: C.textFaint, marginTop: 4 }}>The full assessment report will be sent to this address. Candidates will not see their scores.</p>
+            </div>
+
+            <div style={{ background: C.goldBg, border: `1px solid ${C.goldBorder}`, borderRadius: 10, padding: "14px 16px", marginBottom: 24 }}>
+              <p style={{ fontSize: 12, fontWeight: 600, color: C.gold, margin: "0 0 8px" }}>Before You Begin</p>
+              {[
+                "40 questions — answered one at a time",
+                "Once you move to the next question, you cannot go back",
+                "7 minutes to complete the full assessment",
+                "Frequency scale: Never · Rarely · Sometimes · Often · Always",
+                "Answer each question honestly and independently",
+              ].map((t, i) => (
+                <div key={i} style={{ display: "flex", gap: 8, marginBottom: 4, alignItems: "flex-start" }}>
+                  <span style={{ color: C.gold, fontSize: 10, marginTop: 2, flexShrink: 0 }}>✦</span>
+                  <span style={{ fontSize: 12, color: C.textMid }}>{t}</span>
+                </div>
+              ))}
+            </div>
+
+            <button onClick={handleSubmit} style={{ width: "100%", background: C.gold, color: C.white, border: "none", borderRadius: 10, padding: "14px", fontSize: 15, fontWeight: 700, cursor: "pointer", letterSpacing: 1, fontFamily: "'Playfair Display',Georgia,serif", boxShadow: `0 4px 14px rgba(184,134,11,0.3)` }}>
+              Continue →
+            </button>
+          </div>
         </div>
       </div>
     </div>
+  );
+}
 
-    <a href="/contact" class="btn-gold">Bring This Program to Your Property ◆</a>
-  </div>
+// ── INTRO ─────────────────────────────────────────────────────────────────────
+function Intro({ applicant, onStart }) {
+  return (
+    <div style={{ minHeight: "100vh", background: C.bg, display: "flex", flexDirection: "column" }}>
+      <TopBar />
+      <div style={{ flex: 1, display: "flex", alignItems: "center", justifyContent: "center", padding: "40px 16px" }}>
+        <div style={{ width: "100%", maxWidth: 540 }}>
+          <div style={{ background: C.goldBg, border: `1px solid ${C.goldBorder}`, borderRadius: 10, padding: "12px 20px", marginBottom: 28, display: "flex", alignItems: "center", gap: 12 }}>
+            <div style={{ width: 36, height: 36, borderRadius: 8, background: C.white, border: `1px solid ${C.goldBorder}`, display: "flex", alignItems: "center", justifyContent: "center", fontFamily: "'Playfair Display',serif", fontWeight: 700, color: C.gold, fontSize: 16 }}>
+              {applicant.name.charAt(0)}
+            </div>
+            <div>
+              <div style={{ fontSize: 14, fontWeight: 600, color: C.text }}>{applicant.name}</div>
+              <div style={{ fontSize: 12, color: C.textMuted }}>{applicant.position}</div>
+            </div>
+          </div>
 
-  <div class="">
- <div class="win-card"><span class="win-num">Win¹</span><span class="win-label">The Guests Win</span><div class="win-desc">Guests who feel welcomed, entertained, and respected stay longer and come back. A great dealer interaction is the single most powerful driver of guest loyalty.</div></div>
-   
- <div class="win-card"><span class="win-num">Win²</span><span class="win-label">The Dealers Win</span><div class="win-desc">Dealers who genuinely engage guests earn more in tokes, receive stronger evaluations, and build a reputation on the floor that advances their career.</div></div>
-  
-    <div class="win-card"><span class="win-num">Win³</span><span class="win-label">The Casino Wins</span><div class="win-desc">Properties with engaged, guest-focused dealers see longer playing sessions, higher return visit rates, and stronger word-of-mouth.</div></div>
-  </div>
+          <div style={{ background: C.white, borderRadius: 16, border: `1px solid ${C.border}`, boxShadow: C.shadowLg, padding: "36px" }}>
+            <h1 style={{ fontFamily: "'Playfair Display',Georgia,serif", fontSize: 26, fontWeight: 700, color: C.text, margin: "0 0 6px" }}>Assessment Instructions</h1>
+            <p style={{ fontSize: 13, color: C.textMuted, margin: "0 0 28px" }}>Please read carefully before beginning.</p>
 
-  <h3 style="font-family:'Playfair Display',serif;font-size:1.4rem;color:var(--cream);margin-bottom:8px;">What the Program Covers</h3>
-  <p style="font-size:.88rem;color:var(--muted);margin-bottom:24px;">Delivered in person at your property — a structured, interactive training experience built around real casino floor situations your dealers face every shift.</p>
+            <div style={{ display: "flex", flexDirection: "column", gap: 12, marginBottom: 32 }}>
+              {[
+                ["⏱", "7-minute timed assessment", "The countdown begins the moment you click Begin."],
+                ["➡️", "One question at a time — forward only", "Each question appears on its own screen. Once you select an answer and advance, you cannot return to a previous question. Choose carefully."],
+                ["📊", "Frequency scale", "Rate each statement: Never · Rarely · Sometimes · Often · Always"],
+                ["🔒", "Answer independently", "Treat each question on its own merit. Do not try to align answers — respond honestly to each one."],
+              ].map(([icon, title, desc]) => (
+                <div key={title} style={{ display: "flex", gap: 14, padding: "14px 16px", background: C.bg, borderRadius: 10, border: `1px solid ${C.border}`, alignItems: "flex-start" }}>
+                  <span style={{ fontSize: 20, flexShrink: 0 }}>{icon}</span>
+                  <div>
+                    <div style={{ fontSize: 14, fontWeight: 600, color: C.text, marginBottom: 3 }}>{title}</div>
+                    <div style={{ fontSize: 13, color: C.textMuted, lineHeight: 1.5 }}>{desc}</div>
+                  </div>
+                </div>
+              ))}
+            </div>
 
-  <div class="modules-grid">
-    <div class="module-card"><div class="module-num">01</div><div><div class="module-title">Perception & Mindset</div><div class="module-desc">Shifting how dealers view their role — from card pusher to entertainer, salesperson, and the single biggest influence on whether a guest comes back.</div></div></div>
-    <div class="module-card"><div class="module-num">02</div><div><div class="module-title">Dealer Categories & The Eagle Standard</div><div class="module-desc">Understanding the five dealer types and what it takes to operate at the Eagle Dealer™ level — the standard that keeps guests at the table.</div></div></div>
-    <div class="module-card"><div class="module-num">03</div><div><div class="module-title">The True Cost of a Bad Experience</div><div class="module-desc">Teaching dealers to understand what happens when a guest leaves unhappy — where they go, who they tell, and what it costs the property they'll never return to.</div></div></div>
-    <div class="module-card"><div class="module-num">04</div><div><div class="module-title">Guest Interaction Skills</div><div class="module-desc">Practical tools for greeting, engaging, and building rapport — including arrival and departure statements that make guests feel like they matter.</div></div></div>
-    <div class="module-card"><div class="module-num">05</div><div><div class="module-title">Dealing with Difficult Guests</div><div class="module-desc">Strategies for staying professional and positive when guests are difficult — turning a tense moment into a reason to come back instead of a reason to leave.</div></div></div>
-    <div class="module-card"><div class="module-num">06</div><div><div class="module-title">Body Language & Nonverbal Communication</div><div class="module-desc">What dealers communicate without saying a word — and how posture, eye contact, and energy affect whether a guest feels welcome or invisible.</div></div></div>
-    <div class="module-card"><div class="module-num">07</div><div><div class="module-title">Passing the Baton</div><div class="module-desc">How dealers handle table transitions professionally — keeping guests engaged and informed so the momentum of a great experience never breaks.</div></div></div>
-    <div class="module-card"><div class="module-num">08</div><div><div class="module-title">The 21-Day Challenge</div><div class="module-desc">A commitment-based accountability system that turns training into lasting behavioral change — so the shift in culture sticks long after Rocky leaves the property.</div></div></div>
-  </div>
-</div>
+            {/* Forward-only notice */}
+            <div style={{ background: C.amberBg, border: `1px solid ${C.amberBorder}`, borderRadius: 10, padding: "12px 16px", marginBottom: 24, display: "flex", gap: 10, alignItems: "flex-start" }}>
+              <span style={{ fontSize: 16, flexShrink: 0 }}>⚠️</span>
+              <span style={{ fontSize: 13, color: C.amber, fontWeight: 500, lineHeight: 1.5 }}>
+                <strong>No back button.</strong> Once you move to the next question, your answer is final. Read each statement carefully before selecting.
+              </span>
+            </div>
 
-<div class="outcomes-section">
-  <span class="section-tag">Program Outcomes</span>
-  <h2 class="section-title">What Changes on Your <em>Floor</em></h2>
-  <p style="font-size:.95rem;color:var(--text);line-height:1.8;font-weight:300;max-width:680px;margin:0 auto 40px;text-align:center;">The guests you were losing silently start staying longer, coming back more often, and bringing people with them.</p>
-  <div class="outcomes-grid">
-    <div class="outcome-card"><span class="outcome-icon">◆</span><div class="outcome-title">Guests Stay Longer</div><div class="outcome-desc">Dealers who genuinely engage guests extend playing sessions — not through pressure, but through an experience worth staying for.</div></div>
-    <div class="outcome-card"><span class="outcome-icon">◇</span><div class="outcome-title">Guests Come Back</div><div class="outcome-desc">A great dealer experience is the most powerful driver of return visits. Win-Win-Win trains dealers to be the reason guests choose your property again.</div></div>
-    <div class="outcome-card"><span class="outcome-icon">▣</span><div class="outcome-title">Guests Bring People</div><div class="outcome-desc">Word of mouth works both ways. Dealers trained in the Win-Win-Win standard become stories worth telling — the kind that fill tables on a Friday night.</div></div>
-    <div class="outcome-card"><span class="outcome-icon">◈</span><div class="outcome-title">Dealers Earn More</div><div class="outcome-desc">Toke income rises when guests feel engaged and entertained. Dealers who understand this connection show up differently — every single shift.</div></div>
-  </div>
-</div>
+            <button onClick={onStart} style={{ width: "100%", background: C.gold, color: C.white, border: "none", borderRadius: 10, padding: "15px", fontSize: 15, fontWeight: 700, cursor: "pointer", letterSpacing: 1, fontFamily: "'Playfair Display',serif", boxShadow: `0 4px 14px rgba(184,134,11,0.3)` }}>
+              Begin Assessment
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
 
-<div class="cta-section">
-  <div class="cta-text">
-    <h3>Ready to Stop the Silent Revenue Bleed?</h3>
-    <p>Contact Rocky to discuss CDAT assessment licensing or to bring the Win-Win-Win training program to your property.</p>
-  </div>
-  <div class="cta-buttons">
-    <a href="/contact" class="btn-gold">Contact Rocky ◆</a>
-    <a href="/contact" class="btn-ghost">Get Your Property Code</a>
-  </div>
-</div>
+// ── ONE-QUESTION-PER-PAGE ASSESSMENT ─────────────────────────────────────────
+function Assessment({ questions, onComplete, onExpire, applicant }) {
+  const total = questions.length;
+  const [current, setCurrent] = useState(0);           // index of visible question
+  const [answers, setAnswers] = useState({});           // locked answers
+  const [selected, setSelected] = useState(null);       // staged answer for current Q
+  const [animDir, setAnimDir] = useState("in");         // "in" | "out" for slide animation
+  const [shake, setShake] = useState(false);            // shake if Next tapped with no answer
 
+  const q = questions[current];
+  const pct = Math.round((current / total) * 100);
+  const isLast = current === total - 1;
 
-</body>
-</html>
+  function handleNext() {
+    if (selected === null) {
+      // shake the button and options to prompt selection
+      setShake(true);
+      setTimeout(() => setShake(false), 500);
+      return;
+    }
+    // Lock answer
+    const newAnswers = { ...answers, [q.id]: selected };
+    setAnswers(newAnswers);
+
+    if (isLast) {
+      onComplete(newAnswers);
+      return;
+    }
+
+    // Animate out then advance
+    setAnimDir("out");
+    setTimeout(() => {
+      setCurrent(c => c + 1);
+      setSelected(null);
+      setAnimDir("in");
+    }, 220);
+  }
+
+  // Keyboard support: 1-5 to select, Enter to advance
+  useEffect(() => {
+    function handleKey(e) {
+      if (e.key >= "1" && e.key <= "5") setSelected(parseInt(e.key));
+      if (e.key === "Enter") handleNext();
+    }
+    window.addEventListener("keydown", handleKey);
+    return () => window.removeEventListener("keydown", handleKey);
+  }, [selected, current, answers]);
+
+  const slideStyle = {
+    opacity: animDir === "in" ? 1 : 0,
+    transform: animDir === "in" ? "translateX(0)" : "translateX(40px)",
+    transition: "opacity 0.22s ease, transform 0.22s ease",
+  };
+
+  return (
+    <div style={{ minHeight: "100vh", background: C.bg, display: "flex", flexDirection: "column" }}>
+      {/* Sticky header */}
+      <div style={{ background: C.white, borderBottom: `1px solid ${C.border}`, position: "sticky", top: 0, zIndex: 50, boxShadow: C.shadow }}>
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "0 32px", height: 56 }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+            <span style={{ fontSize: 17 }}>🃏</span>
+            <span style={{ fontFamily: "'Playfair Display',serif", fontSize: 16, fontWeight: 700, color: C.gold, letterSpacing: 2 }}>CDAT</span>
+            <span style={{ fontSize: 12, color: C.textFaint }}>· {applicant.name}</span>
+          </div>
+          <Timer seconds={TIMER_SECONDS} onExpire={() => onComplete(answers)} />
+        </div>
+        {/* Progress bar */}
+        <div style={{ background: C.bg, height: 4 }}>
+          <div style={{ background: C.gold, width: `${pct}%`, height: "100%", transition: "width 0.35s ease" }} />
+        </div>
+      </div>
+
+      {/* Centred question area */}
+      <div style={{ flex: 1, display: "flex", alignItems: "center", justifyContent: "center", padding: "40px 16px" }}>
+        <div style={{ width: "100%", maxWidth: 600 }}>
+
+          {/* Question counter */}
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 24 }}>
+            <div style={{ fontSize: 12, color: C.textFaint, letterSpacing: 1 }}>
+              Question <strong style={{ color: C.textMid }}>{current + 1}</strong> of <strong style={{ color: C.textMid }}>{total}</strong>
+            </div>
+            {/* Dot-row progress — shows last 10 questions as dots */}
+            <div style={{ display: "flex", gap: 4 }}>
+              {Array.from({ length: Math.min(total, 20) }).map((_, i) => {
+                const qIdx = total <= 20 ? i : Math.round(i * (total - 1) / 19);
+                const done = qIdx < current;
+                const active = qIdx === current;
+                return (
+                  <div key={i} style={{
+                    width: active ? 20 : 8, height: 8, borderRadius: 99,
+                    background: done ? C.gold : active ? C.gold : C.border,
+                    opacity: done ? 0.5 : 1,
+                    transition: "all 0.3s",
+                  }} />
+                );
+              })}
+            </div>
+          </div>
+
+          {/* Question card — slides on transition */}
+          <div style={slideStyle}>
+            <div style={{ background: C.white, borderRadius: 16, border: `1px solid ${C.border}`, boxShadow: C.shadowLg, padding: "36px 40px", marginBottom: 20 }}>
+              {/* Question text */}
+              <p style={{ fontSize: 18, fontWeight: 500, color: C.text, lineHeight: 1.65, margin: "0 0 36px", letterSpacing: "-0.01em" }}>
+                {q.text}
+              </p>
+
+              {/* Likert options — large tappable cards */}
+              <div style={{ display: "flex", flexDirection: "column", gap: 10, animation: shake ? "shakeAnim 0.45s ease" : "none" }}>
+                {LIKERT.map((opt, idx) => {
+                  const chosen = selected === opt.value;
+                  return (
+                    <button
+                      key={opt.value}
+                      onClick={() => setSelected(opt.value)}
+                      style={{
+                        display: "flex", alignItems: "center", gap: 16,
+                        padding: "14px 20px", borderRadius: 10, cursor: "pointer",
+                        border: `1.5px solid ${chosen ? C.gold : C.border}`,
+                        background: chosen ? C.goldBg : C.white,
+                        textAlign: "left", outline: "none",
+                        boxShadow: chosen ? `0 0 0 3px ${C.goldBg}` : "none",
+                        transition: "all 0.12s",
+                      }}>
+                      {/* Radio circle */}
+                      <div style={{
+                        width: 20, height: 20, borderRadius: "50%", flexShrink: 0,
+                        border: `2px solid ${chosen ? C.gold : C.borderMid || "#D1D5DB"}`,
+                        background: chosen ? C.gold : C.white,
+                        display: "flex", alignItems: "center", justifyContent: "center",
+                        transition: "all 0.12s",
+                      }}>
+                        {chosen && <div style={{ width: 8, height: 8, borderRadius: "50%", background: C.white }} />}
+                      </div>
+                      {/* Frequency number + label */}
+                      <div style={{ display: "flex", alignItems: "baseline", gap: 10, flex: 1 }}>
+                        <span style={{ fontSize: 11, fontWeight: 700, color: chosen ? C.gold : C.textFaint, minWidth: 14 }}>{idx + 1}</span>
+                        <span style={{ fontSize: 15, fontWeight: chosen ? 700 : 400, color: chosen ? C.gold : C.textMid }}>{opt.label}</span>
+                      </div>
+                      {chosen && <span style={{ fontSize: 14, color: C.gold }}>✓</span>}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+
+            {/* Next / Submit button */}
+            <button
+              onClick={handleNext}
+              style={{
+                width: "100%", padding: "15px",
+                background: selected !== null ? C.gold : C.border,
+                color: selected !== null ? C.white : C.textFaint,
+                border: "none", borderRadius: 10,
+                fontSize: 15, fontWeight: 700, cursor: selected !== null ? "pointer" : "not-allowed",
+                letterSpacing: 1, fontFamily: "'Playfair Display',serif",
+                boxShadow: selected !== null ? `0 4px 14px rgba(184,134,11,0.3)` : "none",
+                transition: "all 0.15s",
+                animation: shake ? "shakeAnim 0.45s ease" : "none",
+              }}>
+              {isLast ? "Submit Assessment" : `Next Question →`}
+            </button>
+
+            {/* Keyboard hint */}
+            <p style={{ textAlign: "center", fontSize: 11, color: C.textFaint, marginTop: 12 }}>
+              Tip: Press <kbd style={{ background: C.bg, border: `1px solid ${C.border}`, borderRadius: 4, padding: "1px 5px", fontSize: 10, color: C.textMuted }}>1</kbd>–<kbd style={{ background: C.bg, border: `1px solid ${C.border}`, borderRadius: 4, padding: "1px 5px", fontSize: 10, color: C.textMuted }}>5</kbd> to select · <kbd style={{ background: C.bg, border: `1px solid ${C.border}`, borderRadius: 4, padding: "1px 5px", fontSize: 10, color: C.textMuted }}>Enter</kbd> to advance
+            </p>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ── RADAR CHART ───────────────────────────────────────────────────────────────
+function RadarChart({ traitResults }) {
+  const cx = 150, cy = 150, r = 108;
+  const angles = traitResults.map((_, i) => (Math.PI * 2 * i / 5) - Math.PI / 2);
+  const gridPts = f => angles.map(a => [cx + r * f * Math.cos(a), cy + r * f * Math.sin(a)]);
+  const scorePts = traitResults.map((res, i) => [cx + r * (res.pct / 100) * Math.cos(angles[i]), cy + r * (res.pct / 100) * Math.sin(angles[i])]);
+  const toPath = pts => pts.map((p, i) => `${i === 0 ? "M" : "L"}${p[0].toFixed(1)},${p[1].toFixed(1)}`).join(" ") + "Z";
+  return (
+    <svg viewBox="0 0 300 300" style={{ width: "100%", maxWidth: 260, display: "block", margin: "0 auto" }}>
+      {[0.25, 0.5, 0.75, 1].map(f => (
+        <polygon key={f} points={gridPts(f).map(p => p.join(",")).join(" ")} fill="none" stroke={C.border} strokeWidth="1" />
+      ))}
+      {angles.map((a, i) => (
+        <line key={i} x1={cx} y1={cy} x2={cx + r * Math.cos(a)} y2={cy + r * Math.sin(a)} stroke={C.border} strokeWidth="1" />
+      ))}
+      <path d={toPath(scorePts)} fill={C.goldBg} stroke={C.gold} strokeWidth="2" />
+      {scorePts.map((p, i) => (
+        <circle key={i} cx={p[0]} cy={p[1]} r="5" fill={traitColor(traitResults[i].pct)} stroke={C.white} strokeWidth="1.5" />
+      ))}
+      {traitResults.map((res, i) => {
+        const lx = cx + (r + 22) * Math.cos(angles[i]), ly = cy + (r + 22) * Math.sin(angles[i]);
+        return <text key={i} x={lx} y={ly} textAnchor="middle" dominantBaseline="middle" fontSize="10" fontWeight="700" fill={traitColor(res.pct)} fontFamily="'Courier New',monospace">{res.trait.abbr}</text>;
+      })}
+      <text x={cx} y={cy} textAnchor="middle" dominantBaseline="middle" fontSize="11" fontWeight="700" fill={C.gold} fontFamily="'Playfair Display',serif">CDAT</text>
+    </svg>
+  );
+}
+
+// ── SCORE BAR ─────────────────────────────────────────────────────────────────
+function ScoreBar({ pct }) {
+  return (
+    <div style={{ background: C.bg, borderRadius: 99, height: 8, overflow: "hidden", marginTop: 8 }}>
+      <div style={{ background: traitColor(pct), width: `${pct}%`, height: "100%", borderRadius: 99, transition: "width 1.2s cubic-bezier(0.22,1,0.36,1)" }} />
+    </div>
+  );
+}
+
+// ── THANK YOU (candidate-facing — NO scores) ──────────────────────────────────
+function ThankYou({ applicant, results, hrLink, onViewReport }) {
+  const [pdfStatus, setPdfStatus] = useState("generating"); // generating | done | error
+  const [filename, setFilename] = useState("");
+
+  useEffect(() => {
+    generateHRPdf(applicant, results)
+      .then(name => { setFilename(name); setPdfStatus("done"); })
+      .catch(() => setPdfStatus("error"));
+  }, []);
+
+  const [copied, setCopied] = useState(false);
+  function copyLink() {
+    navigator.clipboard.writeText(hrLink).then(() => {
+      setCopied(true); setTimeout(() => setCopied(false), 2500);
+    });
+  }
+
+  return (
+    <div style={{ minHeight: "100vh", background: C.bg, display: "flex", flexDirection: "column" }}>
+      <TopBar />
+      <div style={{ flex: 1, display: "flex", alignItems: "center", justifyContent: "center", padding: "40px 16px" }}>
+        <div style={{ width: "100%", maxWidth: 520, textAlign: "center" }}>
+
+          {/* Success icon */}
+          <div style={{ width: 72, height: 72, borderRadius: "50%", background: C.greenBg, border: `2px solid ${C.greenBorder}`, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 32, margin: "0 auto 24px", boxShadow: `0 0 0 8px ${C.greenBg}` }}>✓</div>
+
+          <h1 style={{ fontFamily: "'Playfair Display',Georgia,serif", fontSize: 30, fontWeight: 700, color: C.text, margin: "0 0 12px" }}>
+            Assessment Complete
+          </h1>
+          <p style={{ fontSize: 16, color: C.textMid, margin: "0 0 32px", lineHeight: 1.7 }}>
+            Thank you, <strong>{applicant.name}</strong>.<br/>
+            Your responses have been submitted successfully.
+          </p>
+
+          {/* What happens next */}
+          <div style={{ background: C.white, border: `1px solid ${C.border}`, borderRadius: 16, padding: "28px 32px", boxShadow: C.shadowMd, textAlign: "left", marginBottom: 20 }}>
+            <div style={{ fontSize: 11, letterSpacing: 2, textTransform: "uppercase", color: C.gold, fontWeight: 700, marginBottom: 16 }}>What Happens Next</div>
+            {[
+              ["📋", "Your assessment has been received", "Your responses are being reviewed by the hiring team as part of the evaluation process."],
+              ["🔒", "Results are confidential", "Assessment scores are reviewed only by the HR team and are not shared with applicants."],
+              ["📞", "You will be contacted", "The hiring team will be in touch regarding next steps in your application."],
+            ].map(([icon, title, desc]) => (
+              <div key={title} style={{ display: "flex", gap: 14, marginBottom: 18, alignItems: "flex-start" }}>
+                <span style={{ fontSize: 20, flexShrink: 0 }}>{icon}</span>
+                <div>
+                  <div style={{ fontSize: 14, fontWeight: 600, color: C.text, marginBottom: 3 }}>{title}</div>
+                  <div style={{ fontSize: 13, color: C.textMuted, lineHeight: 1.5 }}>{desc}</div>
+                </div>
+              </div>
+            ))}
+          </div>
+
+          {/* PDF status */}
+          <div style={{ background: pdfStatus === "done" ? C.greenBg : pdfStatus === "error" ? C.amberBg : C.goldBg, border: `1px solid ${pdfStatus === "done" ? C.greenBorder : pdfStatus === "error" ? C.amberBorder : C.goldBorder}`, borderRadius: 10, padding: "12px 18px", marginBottom: 16, display: "flex", alignItems: "center", gap: 10 }}>
+            <span style={{ fontSize: 18 }}>{pdfStatus === "done" ? "✅" : pdfStatus === "error" ? "⚠️" : "⏳"}</span>
+            <div style={{ textAlign: "left" }}>
+              <div style={{ fontSize: 13, fontWeight: 600, color: pdfStatus === "done" ? C.green : pdfStatus === "error" ? C.amber : C.gold }}>
+                {pdfStatus === "done" ? `HR report downloaded: ${filename}` : pdfStatus === "error" ? "PDF download unavailable — use the HR link below" : "Generating HR report PDF…"}
+              </div>
+              {pdfStatus === "done" && <div style={{ fontSize: 11, color: C.textMuted, marginTop: 2 }}>Check your Downloads folder.</div>}
+            </div>
+          </div>
+
+          {/* Submission confirmation strip */}
+          <div style={{ background: C.goldBg, border: `1px solid ${C.goldBorder}`, borderRadius: 10, padding: "12px 18px", display: "flex", justifyContent: "space-between", flexWrap: "wrap", gap: 8, marginBottom: 16 }}>
+            {[["Candidate", applicant.name], ["Position", applicant.position], ["Date", applicant.date]].map(([l, v]) => (
+              <div key={l} style={{ textAlign: "center" }}>
+                <div style={{ fontSize: 10, letterSpacing: 1.5, textTransform: "uppercase", color: C.gold, fontWeight: 700 }}>{l}</div>
+                <div style={{ fontSize: 12, color: C.textMid, fontWeight: 500, marginTop: 2 }}>{v}</div>
+              </div>
+            ))}
+          </div>
+
+          <p style={{ fontSize: 11, color: C.textFaint, marginTop: 4 }}>You may now close this window.</p>
+
+          {/* HR access section */}
+          <div style={{ marginTop: 32, borderTop: `1px solid ${C.border}`, paddingTop: 20 }}>
+            <div style={{ fontSize: 11, letterSpacing: 2, textTransform: "uppercase", color: C.textFaint, fontWeight: 700, marginBottom: 12 }}>HR / Assessor Access</div>
+            <div style={{ background: C.white, border: `1px solid ${C.border}`, borderRadius: 12, padding: "16px 20px", boxShadow: C.shadow, textAlign: "left" }}>
+              <div style={{ fontSize: 13, color: C.textMuted, marginBottom: 12, lineHeight: 1.6 }}>
+                Share this link with the hiring manager to access the full scored report on any device:
+              </div>
+              <div style={{ background: C.bg, border: `1px solid ${C.border}`, borderRadius: 8, padding: "10px 14px", marginBottom: 10, fontFamily: "'Courier New',monospace", fontSize: 11, color: C.textMuted, wordBreak: "break-all", lineHeight: 1.5 }}>
+                {hrLink.length > 80 ? hrLink.slice(0, 80) + "…" : hrLink}
+              </div>
+              <div style={{ display: "flex", gap: 10 }}>
+                <button onClick={copyLink} style={{ flex: 1, background: copied ? C.greenBg : C.goldBg, border: `1px solid ${copied ? C.greenBorder : C.goldBorder}`, borderRadius: 8, padding: "10px", fontSize: 13, fontWeight: 700, color: copied ? C.green : C.gold, cursor: "pointer", transition: "all 0.15s" }}>
+                  {copied ? "✓ Copied!" : "Copy HR Link"}
+                </button>
+                <button onClick={onViewReport} style={{ flex: 1, background: C.gold, border: "none", borderRadius: 8, padding: "10px", fontSize: 13, fontWeight: 700, color: C.white, cursor: "pointer" }}>
+                  Open HR Report →
+                </button>
+              </div>
+            </div>
+          </div>
+
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ── HR REPORT (HR-only view — full scores, behind PIN) ────────────────────────
+function HRReport({ results, timeTaken, applicant }) {
+  const { traitResults, overall, recommendation, recColor, recBg, recBorder, totalRedFlags, inconsistencies, interviewQs } = results;
+  const [unlocked, setUnlocked] = useState(false);
+  const [pin, setPin] = useState("");
+  const [pinError, setPinError] = useState("");
+  const [tab, setTab] = useState("overview");
+  const mins = Math.floor(timeTaken / 60), secs = timeTaken % 60;
+
+  // HR PIN — in production this would be set per property; here it's a fixed demo
+  const HR_PIN = "1234";
+
+  function handleUnlock() {
+    if (pin === HR_PIN) { setUnlocked(true); setPinError(""); }
+    else { setPinError("Incorrect PIN. Please try again."); setPin(""); }
+  }
+
+  const tabs = ["overview", "traits", "consistency", "interview"];
+  const tabLabels = { overview: "Overview", traits: "Trait Detail", consistency: "Consistency", interview: "Interview Qs" };
+  const tabIcons  = { overview: "📊", traits: "📋", consistency: "🔍", interview: "💬" };
+
+  // ── PIN GATE ──
+  if (!unlocked) {
+    return (
+      <div style={{ minHeight: "100vh", background: C.bg, display: "flex", flexDirection: "column" }}>
+        <TopBar />
+        <div style={{ flex: 1, display: "flex", alignItems: "center", justifyContent: "center", padding: "40px 16px" }}>
+          <div style={{ width: "100%", maxWidth: 420 }}>
+            <div style={{ textAlign: "center", marginBottom: 28 }}>
+              <div style={{ width: 56, height: 56, borderRadius: 16, background: C.goldBg, border: `1.5px solid ${C.goldBorder}`, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 26, margin: "0 auto 16px" }}>🔐</div>
+              <h1 style={{ fontFamily: "'Playfair Display',serif", fontSize: 24, fontWeight: 700, color: C.text, margin: "0 0 8px" }}>HR Access Only</h1>
+              <p style={{ fontSize: 13, color: C.textMuted, margin: 0 }}>Enter your assessor PIN to view the full candidate report.</p>
+            </div>
+            <div style={{ background: C.white, borderRadius: 16, border: `1px solid ${C.border}`, boxShadow: C.shadowLg, padding: "32px 36px" }}>
+              {/* Candidate summary (non-sensitive) */}
+              <div style={{ background: C.bg, border: `1px solid ${C.border}`, borderRadius: 10, padding: "12px 16px", marginBottom: 24, display: "flex", gap: 12, alignItems: "center" }}>
+                <div style={{ width: 36, height: 36, borderRadius: 8, background: C.goldBg, border: `1px solid ${C.goldBorder}`, display: "flex", alignItems: "center", justifyContent: "center", fontWeight: 700, color: C.gold, fontSize: 16, fontFamily: "'Playfair Display',serif", flexShrink: 0 }}>
+                  {applicant.name.charAt(0)}
+                </div>
+                <div>
+                  <div style={{ fontSize: 14, fontWeight: 600, color: C.text }}>{applicant.name}</div>
+                  <div style={{ fontSize: 12, color: C.textMuted }}>{applicant.position} · {applicant.date}</div>
+                </div>
+              </div>
+
+              <label style={{ display: "block", fontSize: 11, fontWeight: 600, color: C.textMuted, letterSpacing: 1.5, textTransform: "uppercase", marginBottom: 6 }}>Assessor PIN</label>
+              <input
+                type="password" placeholder="Enter PIN" value={pin} maxLength={8}
+                onChange={e => { setPin(e.target.value); setPinError(""); }}
+                onKeyDown={e => e.key === "Enter" && handleUnlock()}
+                style={{ width: "100%", background: C.white, border: `1.5px solid ${pinError ? C.red : C.border}`, borderRadius: 8, padding: "12px 14px", fontSize: 18, color: C.text, fontFamily: "'Courier New',monospace", letterSpacing: 6, outline: "none", marginBottom: 8, textAlign: "center" }}
+              />
+              {pinError && <p style={{ fontSize: 12, color: C.red, marginBottom: 12 }}>⚠ {pinError}</p>}
+              <p style={{ fontSize: 11, color: C.textFaint, marginBottom: 16 }}>Demo PIN: <strong style={{ color: C.textMid, letterSpacing: 2 }}>1234</strong> — change this to your property code before deploying.</p>
+              <button onClick={handleUnlock} style={{ width: "100%", background: C.gold, color: C.white, border: "none", borderRadius: 10, padding: "13px", fontSize: 15, fontWeight: 700, cursor: "pointer", letterSpacing: 1, fontFamily: "'Playfair Display',serif", boxShadow: `0 4px 14px rgba(184,134,11,0.3)` }}>
+                View Report →
+              </button>
+            </div>
+            <div style={{ background: C.amberBg, border: `1px solid ${C.amberBorder}`, borderRadius: 10, padding: "12px 16px", marginTop: 16, display: "flex", gap: 10 }}>
+              <span style={{ fontSize: 14, flexShrink: 0 }}>⚠️</span>
+              <span style={{ fontSize: 12, color: C.amber, lineHeight: 1.5 }}>This report is confidential. Do not share with the applicant or unauthorized personnel.</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // ── FULL REPORT (unlocked) ──
+  return (
+    <div style={{ minHeight: "100vh", background: C.bg, display: "flex", flexDirection: "column" }}>
+      <TopBar right={
+        <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+          <div style={{ background: C.amberBg, border: `1px solid ${C.amberBorder}`, borderRadius: 6, padding: "4px 10px", fontSize: 11, fontWeight: 700, color: C.amber, letterSpacing: 1 }}>🔐 HR VIEW</div>
+          <div style={{ fontSize: 12, color: C.textMuted }}>{applicant.date}</div>
+        </div>
+      } />
+
+      <div style={{ maxWidth: 860, margin: "0 auto", padding: "36px 16px 64px", width: "100%" }}>
+
+        {/* Confidential banner */}
+        <div style={{ background: C.amberBg, border: `1px solid ${C.amberBorder}`, borderRadius: 10, padding: "10px 18px", marginBottom: 20, display: "flex", gap: 10, alignItems: "center" }}>
+          <span style={{ fontSize: 14 }}>⚠️</span>
+          <span style={{ fontSize: 12, color: C.amber, fontWeight: 600 }}>Confidential — For Hiring Manager & HR Use Only. Do not share with the applicant.</span>
+        </div>
+
+        {/* Candidate strip */}
+        <div style={{ background: C.white, border: `1px solid ${C.border}`, borderRadius: 12, padding: "16px 24px", marginBottom: 24, display: "flex", flexWrap: "wrap", gap: 16, alignItems: "center", boxShadow: C.shadow }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 14, flex: 1, minWidth: 200 }}>
+            <div style={{ width: 44, height: 44, borderRadius: 10, background: C.goldBg, border: `1.5px solid ${C.goldBorder}`, display: "flex", alignItems: "center", justifyContent: "center", fontFamily: "'Playfair Display',serif", fontWeight: 700, color: C.gold, fontSize: 18, flexShrink: 0 }}>
+              {applicant.name.charAt(0)}
+            </div>
+            <div>
+              <div style={{ fontSize: 16, fontWeight: 700, color: C.text }}>{applicant.name}</div>
+              <div style={{ fontSize: 12, color: C.textMuted, marginTop: 1 }}>{applicant.position}</div>
+            </div>
+          </div>
+          <div style={{ display: "flex", gap: 32, flexWrap: "wrap", alignItems: "center" }}>
+            {[["Date", applicant.date], ["Time Taken", `${mins}m ${secs}s`], ["HR Contact", applicant.hrEmail]].map(([l, v]) => (
+              <div key={l} style={{ textAlign: "right" }}>
+                <div style={{ fontSize: 10, letterSpacing: 1.5, textTransform: "uppercase", color: C.textFaint, fontWeight: 600 }}>{l}</div>
+                <div style={{ fontSize: 13, color: C.textMid, fontWeight: 500, marginTop: 2 }}>{v}</div>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* Tabs */}
+        <div style={{ background: C.white, border: `1px solid ${C.border}`, borderRadius: 12, marginBottom: 20, display: "flex", overflow: "hidden", boxShadow: C.shadow }}>
+          {tabs.map(t => (
+            <button key={t} onClick={() => setTab(t)} style={{ flex: 1, padding: "13px 8px", background: tab === t ? C.goldBg : C.white, color: tab === t ? C.gold : C.textMuted, border: "none", borderBottom: tab === t ? `2px solid ${C.gold}` : "2px solid transparent", cursor: "pointer", fontSize: 13, fontWeight: tab === t ? 700 : 400, transition: "all 0.15s", display: "flex", alignItems: "center", justifyContent: "center", gap: 6 }}>
+              <span>{tabIcons[t]}</span><span style={{ whiteSpace: "nowrap" }}>{tabLabels[t]}</span>
+            </button>
+          ))}
+        </div>
+
+        {/* REPORT TABS — identical content to old Report component below */}
+
+        {/* OVERVIEW */}
+        {tab === "overview" && (
+          <div>
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16, marginBottom: 20 }}>
+              <div style={{ background: C.white, border: `1.5px solid ${recBorder}`, borderRadius: 14, padding: "28px 24px", textAlign: "center", boxShadow: C.shadowMd }}>
+                <div style={{ fontSize: 11, letterSpacing: 2, textTransform: "uppercase", color: C.textFaint, fontWeight: 600, marginBottom: 12 }}>Overall Composite Score</div>
+                <div style={{ fontFamily: "'Playfair Display',Georgia,serif", fontSize: 64, fontWeight: 700, color: recColor, lineHeight: 1 }}>{overall}<span style={{ fontSize: 26 }}>%</span></div>
+                <div style={{ margin: "16px auto 0", padding: "9px 20px", borderRadius: 99, background: recBg, color: recColor, fontWeight: 700, fontSize: 11, letterSpacing: 2, textTransform: "uppercase", display: "inline-block", border: `1px solid ${recBorder}` }}>
+                  {recommendation}
+                </div>
+                {totalRedFlags > 0 && <div style={{ marginTop: 10, fontSize: 12, color: C.red, fontWeight: 600 }}>⚠ {totalRedFlags} red flag{totalRedFlags > 1 ? "s" : ""}</div>}
+                {inconsistencies.length > 0 && <div style={{ marginTop: 4, fontSize: 12, color: C.amber, fontWeight: 600 }}>🔄 {inconsistencies.length} inconsistenc{inconsistencies.length > 1 ? "ies" : "y"}</div>}
+              </div>
+              <div style={{ background: C.white, border: `1px solid ${C.border}`, borderRadius: 14, padding: "16px", boxShadow: C.shadow, display: "flex", alignItems: "center", justifyContent: "center" }}>
+                <RadarChart traitResults={traitResults} />
+              </div>
+            </div>
+
+            <div style={{ background: C.white, border: `1px solid ${C.border}`, borderRadius: 14, padding: "24px", marginBottom: 16, boxShadow: C.shadow }}>
+              <div style={{ fontSize: 11, letterSpacing: 2, textTransform: "uppercase", color: C.gold, fontWeight: 700, marginBottom: 18 }}>Trait Summary</div>
+              {[...traitResults].sort((a, b) => b.pct - a.pct).map(r => (
+                <div key={r.trait.id} style={{ display: "flex", alignItems: "center", gap: 16, marginBottom: 12 }}>
+                  <div style={{ minWidth: 190, fontSize: 13, color: C.textMid, fontWeight: 500 }}>{r.trait.name}</div>
+                  <div style={{ flex: 1 }}><ScoreBar pct={r.pct} /></div>
+                  <div style={{ minWidth: 42, textAlign: "right", fontWeight: 700, fontSize: 15, color: traitColor(r.pct) }}>{r.pct}%</div>
+                  <div style={{ minWidth: 90, padding: "3px 10px", borderRadius: 99, background: traitBg(r.pct), color: traitColor(r.pct), border: `1px solid ${traitBorder(r.pct)}`, fontSize: 11, fontWeight: 600, textAlign: "center" }}>{traitLabel(r.pct)}</div>
+                </div>
+              ))}
+            </div>
+
+            <div style={{ background: C.white, border: `1px solid ${C.border}`, borderRadius: 14, padding: "20px 24px", boxShadow: C.shadow }}>
+              <div style={{ fontSize: 11, letterSpacing: 2, textTransform: "uppercase", color: C.textFaint, fontWeight: 700, marginBottom: 14 }}>Score Interpretation Guide</div>
+              <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(180px,1fr))", gap: 12 }}>
+                {[
+                  [C.green, C.greenBg, C.greenBorder, "75–100%", "Strong", "Consistent with the dealer role."],
+                  [C.amber, C.amberBg, C.amberBorder, "55–74%", "Moderate", "May need coaching in this area."],
+                  [C.red, C.redBg, C.redBorder, "0–54%", "Needs Improvement", "Concerns raised; further review advised."],
+                  [C.red, C.redBg, C.redBorder, "Red Flag", "Critical", "Potentially disqualifying responses."],
+                ].map(([col, bg, brd, range, label, desc]) => (
+                  <div key={range} style={{ background: bg, border: `1px solid ${brd}`, borderRadius: 10, padding: "12px 14px" }}>
+                    <div style={{ fontWeight: 700, fontSize: 13, color: col, marginBottom: 4 }}>{range}</div>
+                    <div style={{ fontWeight: 600, fontSize: 12, color: col, marginBottom: 3 }}>{label}</div>
+                    <div style={{ fontSize: 11, color: C.textMuted, lineHeight: 1.5 }}>{desc}</div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* TRAITS */}
+        {tab === "traits" && (
+          <div>
+            {traitResults.map(r => (
+              <div key={r.trait.id} style={{ background: C.white, border: `1px solid ${r.redFlags.length > 0 ? C.redBorder : C.border}`, borderRadius: 14, padding: "22px 26px", marginBottom: 14, boxShadow: C.shadow }}>
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", flexWrap: "wrap", gap: 8, marginBottom: 10 }}>
+                  <div>
+                    <div style={{ fontSize: 17, fontWeight: 700, color: C.text, fontFamily: "'Playfair Display',serif" }}>{r.trait.name}</div>
+                    <div style={{ marginTop: 6, display: "inline-block", padding: "3px 10px", borderRadius: 99, background: traitBg(r.pct), color: traitColor(r.pct), border: `1px solid ${traitBorder(r.pct)}`, fontSize: 11, fontWeight: 600 }}>{traitLabel(r.pct)}</div>
+                  </div>
+                  <div style={{ fontFamily: "'Playfair Display',serif", fontSize: 36, fontWeight: 700, color: traitColor(r.pct) }}>{r.pct}%</div>
+                </div>
+                <ScoreBar pct={r.pct} />
+                {r.redFlags.length > 0 && (
+                  <div style={{ marginTop: 16, background: C.redBg, border: `1px solid ${C.redBorder}`, borderRadius: 10, padding: "14px 16px" }}>
+                    <div style={{ color: C.red, fontWeight: 700, fontSize: 11, letterSpacing: 1, textTransform: "uppercase", marginBottom: 10 }}>🚩 Red Flag{r.redFlags.length > 1 ? "s" : ""} Detected</div>
+                    {r.redFlags.map((f, i) => (
+                      <div key={i} style={{ color: C.red, fontSize: 13, marginBottom: 6, paddingLeft: 12, borderLeft: `2px solid ${C.red}`, lineHeight: 1.5 }}>"{f}"</div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            ))}
+          </div>
+        )}
+
+        {/* CONSISTENCY */}
+        {tab === "consistency" && (
+          <div style={{ background: C.white, border: `1px solid ${C.border}`, borderRadius: 14, padding: "24px", boxShadow: C.shadow }}>
+            <h3 style={{ fontFamily: "'Playfair Display',serif", fontSize: 20, fontWeight: 700, color: C.text, margin: "0 0 8px" }}>Consistency Analysis</h3>
+            <p style={{ fontSize: 13, color: C.textMuted, margin: "0 0 24px", lineHeight: 1.6 }}>Paired questions measure the same trait from opposite directions. Large discrepancies may indicate inconsistent self-reporting.</p>
+            {inconsistencies.length === 0 ? (
+              <div style={{ textAlign: "center", padding: "40px 0" }}>
+                <div style={{ width: 56, height: 56, borderRadius: "50%", background: C.greenBg, border: `1.5px solid ${C.greenBorder}`, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 24, margin: "0 auto 16px" }}>✅</div>
+                <div style={{ fontWeight: 700, fontSize: 17, color: C.green, marginBottom: 6 }}>No Inconsistencies Detected</div>
+                <div style={{ fontSize: 13, color: C.textMuted }}>{applicant.name}'s responses appear internally consistent.</div>
+              </div>
+            ) : (
+              <div>
+                <div style={{ background: C.amberBg, border: `1px solid ${C.amberBorder}`, borderRadius: 8, padding: "10px 14px", marginBottom: 20, fontSize: 13, color: C.amber, fontWeight: 600 }}>
+                  ⚠ {inconsistencies.length} inconsistent pair{inconsistencies.length > 1 ? "s" : ""} detected. Recommend addressing in the interview.
+                </div>
+                {inconsistencies.map((inc, i) => (
+                  <div key={i} style={{ background: C.amberBg, border: `1px solid ${C.amberBorder}`, borderRadius: 10, padding: "16px 18px", marginBottom: 12 }}>
+                    <div style={{ fontSize: 11, letterSpacing: 1, textTransform: "uppercase", color: C.amber, fontWeight: 700, marginBottom: 10 }}>{inc.trait} · Pair {i + 1}</div>
+                    <div style={{ fontSize: 13, color: C.textMid, paddingLeft: 12, borderLeft: `2px solid ${C.amber}`, marginBottom: 6, lineHeight: 1.5 }}>"{inc.q1}"</div>
+                    <div style={{ fontSize: 11, color: C.textFaint, textAlign: "center", margin: "6px 0" }}>contradicts ↕</div>
+                    <div style={{ fontSize: 13, color: C.textMid, paddingLeft: 12, borderLeft: `2px solid ${C.amber}`, lineHeight: 1.5 }}>"{inc.q2}"</div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* INTERVIEW */}
+        {tab === "interview" && (
+          <div>
+            <div style={{ background: C.white, border: `1px solid ${C.border}`, borderRadius: 14, padding: "24px", marginBottom: 16, boxShadow: C.shadow }}>
+              <h3 style={{ fontFamily: "'Playfair Display',serif", fontSize: 20, fontWeight: 700, color: C.text, margin: "0 0 8px" }}>Suggested Interview Questions</h3>
+              <p style={{ fontSize: 13, color: C.textMuted, margin: "0 0 24px", lineHeight: 1.6 }}>Generated based on traits where {applicant.name} scored below 70% or triggered red flags.</p>
+              {interviewQs.length === 0 ? (
+                <div style={{ textAlign: "center", padding: "40px 0" }}>
+                  <div style={{ width: 56, height: 56, borderRadius: "50%", background: C.greenBg, border: `1.5px solid ${C.greenBorder}`, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 24, margin: "0 auto 16px" }}>🎯</div>
+                  <div style={{ fontWeight: 700, fontSize: 17, color: C.green, marginBottom: 6 }}>No Focus Areas Flagged</div>
+                  <div style={{ fontSize: 13, color: C.textMuted }}>Candidate scored well across all traits.</div>
+                </div>
+              ) : (
+                interviewQs.map((group, i) => (
+                  <div key={i} style={{ marginBottom: 24 }}>
+                    <div style={{ fontSize: 14, fontWeight: 700, color: C.gold, fontFamily: "'Playfair Display',serif", paddingBottom: 8, borderBottom: `1px solid ${C.goldBorder}`, marginBottom: 12 }}>{group.traitName}</div>
+                    {group.questions.map((q, j) => (
+                      <div key={j} style={{ display: "flex", gap: 12, marginBottom: 10, alignItems: "flex-start", padding: "10px 14px", background: C.bg, borderRadius: 8, border: `1px solid ${C.border}` }}>
+                        <span style={{ fontWeight: 700, color: C.gold, fontSize: 13, flexShrink: 0, minWidth: 18 }}>{j + 1}.</span>
+                        <span style={{ fontSize: 13, color: C.textMid, lineHeight: 1.6 }}>{q}</span>
+                      </div>
+                    ))}
+                  </div>
+                ))
+              )}
+            </div>
+            <div style={{ background: C.goldBg, border: `1px solid ${C.goldBorder}`, borderRadius: 12, padding: "16px 20px" }}>
+              <p style={{ fontSize: 12, color: C.textMid, margin: 0, lineHeight: 1.7 }}>
+                <strong style={{ color: C.gold }}>Interviewer Tip:</strong> Listen for specific past examples (S-T-A-R format), emotional regulation under pressure, and alignment with casino floor expectations.
+              </p>
+            </div>
+          </div>
+        )}
+
+        <p style={{ fontSize: 11, color: C.textFaint, textAlign: "center", marginTop: 36 }}>
+          CDAT © {new Date().getFullYear()} · Confidential · For authorized personnel only
+        </p>
+      </div>
+    </div>
+  );
+}
+
+// ── MAIN APP ──────────────────────────────────────────────────────────────────
+export default function App() {
+  const startRef = useRef(null);
+
+  // Check if this is an HR report link on load
+  const hrPayload = parseHRLink();
+  const [phase, setPhase] = useState(hrPayload ? "hrreport" : "welcome");
+  const [applicant, setApplicant] = useState(hrPayload ? hrPayload.a : null);
+  const [shuffledQs, setShuffledQs] = useState([]);
+  const [results, setResults] = useState(hrPayload ? hrPayload.r : null);
+  const [hrLink, setHrLink] = useState("");
+
+  function handleWelcomeContinue(formData) { setApplicant(formData); setPhase("intro"); }
+
+  function handleStart() {
+    setShuffledQs(shuffle(TRAITS.flatMap(t => t.questions)));
+    startRef.current = Date.now();
+    setPhase("assessment");
+  }
+
+  function handleComplete(answers) {
+    const elapsed = Math.round((Date.now() - startRef.current) / 1000);
+    const r = { ...calcResults(answers), timeTaken: elapsed };
+    setResults(r);
+    // Build shareable HR link before showing thank you
+    const link = buildHRLink(applicant, r);
+    setHrLink(link);
+    setPhase("thankyou");
+  }
+
+  return (
+    <div>
+      <style>{`
+        @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700;900&display=swap');
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body { background: #F7F8FA; }
+        button:hover:not(:disabled) { filter: brightness(0.96); }
+        input::placeholder { color: #9CA3AF; }
+        input:focus, select:focus { outline: none; }
+        @keyframes timerPulse { 0%,100%{opacity:1} 50%{opacity:0.35} }
+        @keyframes shakeAnim {
+          0%,100% { transform: translateX(0); }
+          20%      { transform: translateX(-6px); }
+          40%      { transform: translateX(6px); }
+          60%      { transform: translateX(-4px); }
+          80%      { transform: translateX(4px); }
+        }
+      `}</style>
+      {phase === "welcome"    && <Welcome onContinue={handleWelcomeContinue} />}
+      {phase === "intro"      && <Intro applicant={applicant} onStart={handleStart} />}
+      {phase === "assessment" && <Assessment questions={shuffledQs} onComplete={handleComplete} onExpire={() => handleComplete({})} applicant={applicant} />}
+      {phase === "thankyou"   && <ThankYou applicant={applicant} results={results} hrLink={hrLink} onViewReport={() => setPhase("hrreport")} />}
+      {phase === "hrreport"   && results && <HRReport results={results} timeTaken={results.timeTaken} applicant={applicant} />}
+    </div>
+  );
+}
