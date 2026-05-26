@@ -2,7 +2,7 @@ import { useState, useRef, useEffect, useCallback } from "react";
 
 // ── SUPABASE CONFIG ───────────────────────────────────────────────────────────
 const SUPABASE_URL = "https://lqypjbgphjvvwnjihurk.supabase.co";
-const SUPABASE_KEY = "sb_publishable__IW1ckNtDxvI8eDxa_NtgA_ZtlgCPry";
+const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImxxeXBqYmdwaGp2dnduamlodXJrIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzk3NDI4ODIsImV4cCI6MjA5NTMxODg4Mn0.t-Oz-H1u6MEdSxhS_Qng_YeVu8tL9vcdY_G-x5s9W18";
 
 async function sbFetch(path, options = {}) {
   const res = await fetch(`${SUPABASE_URL}/rest/v1/${path}`, {
@@ -375,50 +375,81 @@ function CDATAssessment({ onComplete, onBack }) {
 
   if (phase === "welcome") return (
     <><style>{SUITE_STYLES}</style>
-    <div style={{ minHeight: "100vh", background: "#0e1a2b", display: "flex", flexDirection: "column" }} ref={topRef}>
-      <div className="hdr">
-        <div><div className="hdr-eyebrow">CasinoPro Solutions</div><div className="hdr-title">CDAT Assessment</div></div>
-        <div style={{ display: "flex", gap: 10, alignItems: "center" }}>
-          <div className="hdr-badge">New Applicant</div>
-          <button onClick={onBack} className="btn btn-ghost" style={{ fontSize: ".58rem" }}>← Back</button>
+    <style>{`
+      .welcome-page{min-height:100vh;background:#F7F8FA;display:flex;flex-direction:column;font-family:'Source Sans 3',sans-serif}
+      .welcome-hdr{background:#fff;border-bottom:1px solid #E8EAED;height:56px;display:flex;align-items:center;justify-content:space-between;padding:0 32px;box-shadow:0 1px 3px rgba(0,0,0,.08)}
+      .welcome-card{background:#fff;border-radius:16px;border:1px solid #E8EAED;box-shadow:0 10px 15px rgba(0,0,0,.06);padding:36px;width:100%;max-width:520px}
+      .welcome-label{font-size:11px;font-weight:600;color:#6B7280;letter-spacing:1.5px;text-transform:uppercase;margin-bottom:6px;display:block}
+      .welcome-input{width:100%;border:1.5px solid #D4CFC4;border-radius:8px;padding:11px 14px;font-size:14px;color:#1a1a2e;background:#fff;outline:none;transition:border-color .2s;font-family:inherit}
+      .welcome-input:focus{border-color:#B8860B}
+      .welcome-select{width:100%;border:1.5px solid #D4CFC4;border-radius:8px;padding:11px 14px;font-size:14px;color:#1a1a2e;background:#fff;outline:none;cursor:pointer;font-family:inherit;appearance:none;transition:border-color .2s}
+      .welcome-select:focus{border-color:#B8860B}
+      .before-box{background:#FDF8EC;border:1px solid #E8D5A3;border-radius:10px;padding:16px 20px;margin-bottom:20px}
+      .before-title{font-size:14px;font-weight:700;color:#B8860B;margin-bottom:10px}
+      .before-item{display:flex;gap:10px;margin-bottom:6px;align-items:flex-start;font-size:13px;color:#374151;line-height:1.5}
+      .before-icon{color:#B8860B;font-size:12px;margin-top:2px;flex-shrink:0}
+      .note-box{background:#FDF8EC;border:1px solid #E8D5A3;border-radius:8px;padding:12px 16px;margin-bottom:20px}
+      .note-text{font-size:12px;color:#374151;line-height:1.6;font-style:italic}
+      .welcome-btn{width:100%;background:#B8860B;color:#fff;border:none;border-radius:10px;padding:14px;font-size:15px;font-weight:700;cursor:pointer;font-family:'Playfair Display',serif;letter-spacing:1px;box-shadow:0 4px 14px rgba(184,134,11,.3);transition:all .15s}
+      .welcome-btn:hover{background:#9A7209}
+    `}</style>
+    <div className="welcome-page" ref={topRef}>
+      <div className="welcome-hdr">
+        <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+          <span style={{ fontSize: 18 }}>🃏</span>
+          <span style={{ fontFamily: "'Playfair Display',Georgia,serif", fontSize: 17, fontWeight: 700, color: "#B8860B", letterSpacing: 2 }}>CDAT</span>
+          <span style={{ fontSize: 12, color: "#9CA3AF", marginLeft: 4 }}>Casino Dealer Aptitude Assessment</span>
         </div>
+        <button onClick={onBack} style={{ background: "none", border: "1px solid #E8EAED", borderRadius: 6, padding: "5px 14px", fontSize: 12, color: "#6B7280", cursor: "pointer" }}>← Back</button>
       </div>
-      <div style={{ flex: 1, display: "flex", alignItems: "center", justifyContent: "center", padding: "40px 20px" }}>
-        <div style={{ width: "100%", maxWidth: 540 }}>
-          <div style={{ textAlign: "center", marginBottom: 32 }}>
-            <div style={{ fontFamily: "'Playfair Display',serif", fontSize: "2rem", fontWeight: 700, color: "#f7f2e8", marginBottom: 8 }}>Welcome</div>
-            <div style={{ fontSize: ".88rem", color: "#8a9db5" }}>Please complete the fields below to begin your assessment.</div>
+      <div style={{ flex: 1, display: "flex", alignItems: "center", justifyContent: "center", padding: "40px 16px" }}>
+        <div style={{ width: "100%", maxWidth: 520 }}>
+          <div style={{ textAlign: "center", marginBottom: 28 }}>
+            <h1 style={{ fontFamily: "'Playfair Display',Georgia,serif", fontSize: 32, fontWeight: 700, color: "#111827", margin: "0 0 8px" }}>Welcome</h1>
+            <p style={{ fontSize: 14, color: "#6B7280", margin: 0 }}>Please complete the fields below to begin your assessment.</p>
           </div>
-          <div style={{ background: "#152338", border: "1px solid rgba(201,168,76,.2)", padding: 32 }}>
-            <div style={{ marginBottom: 20 }}>
-              <div style={{ fontFamily: "'Cinzel',serif", fontSize: ".55rem", letterSpacing: ".2em", color: "#8a9db5", textTransform: "uppercase", marginBottom: 8 }}>Full Name</div>
-              <input value={candName} onChange={e => { setCandName(e.target.value); setNameError(""); }}
-                placeholder="e.g. Jordan M. Rivers"
-                style={{ width: "100%", background: "#0e1a2b", border: "1.5px solid rgba(201,168,76,.3)", padding: "12px 16px", fontSize: 15, color: "#f7f2e8", outline: "none", fontFamily: "inherit" }} />
+          <div className="welcome-card">
+            <div style={{ marginBottom: 18 }}>
+              <label className="welcome-label">Full Name</label>
+              <input className="welcome-input" type="text" placeholder="e.g. Jordan M. Rivers" value={candName}
+                onChange={e => { setCandName(e.target.value); setNameError(""); }} />
+            </div>
+            <div style={{ marginBottom: 18 }}>
+              <label className="welcome-label">Position Applied For</label>
+              <div style={{ position: "relative" }}>
+                <select className="welcome-select" value={candPosition} onChange={e => { setCandPosition(e.target.value); setNameError(""); }}>
+                  <option value="">Select a position...</option>
+                  {CDAT_POSITIONS.map(p => <option key={p} value={p}>{p}</option>)}
+                </select>
+                <svg style={{ position: "absolute", right: 12, top: "50%", transform: "translateY(-50%)", pointerEvents: "none" }} width="12" height="8" viewBox="0 0 12 8">
+                  <path d="M1 1l5 5 5-5" stroke="#9CA3AF" strokeWidth="1.5" fill="none" strokeLinecap="round" />
+                </svg>
+              </div>
             </div>
             <div style={{ marginBottom: 20 }}>
-              <div style={{ fontFamily: "'Cinzel',serif", fontSize: ".55rem", letterSpacing: ".2em", color: "#8a9db5", textTransform: "uppercase", marginBottom: 8 }}>Position Applied For</div>
-              <select value={candPosition} onChange={e => { setCandPosition(e.target.value); setNameError(""); }}
-                style={{ width: "100%", background: "#0e1a2b", border: "1.5px solid rgba(201,168,76,.3)", padding: "12px 16px", fontSize: 15, color: candPosition ? "#f7f2e8" : "#8a9db5", outline: "none", fontFamily: "inherit", cursor: "pointer" }}>
-                <option value="">Select a position...</option>
-                {CDAT_POSITIONS.map(p => <option key={p} value={p}>{p}</option>)}
-              </select>
+              <label className="welcome-label">Date</label>
+              <input className="welcome-input" type="text" value={today} readOnly style={{ color: "#6B7280", background: "#F9FAFB", cursor: "default" }} />
             </div>
-            <div style={{ marginBottom: 24 }}>
-              <div style={{ fontFamily: "'Cinzel',serif", fontSize: ".55rem", letterSpacing: ".2em", color: "#8a9db5", textTransform: "uppercase", marginBottom: 8 }}>Date</div>
-              <input value={today} readOnly style={{ width: "100%", background: "rgba(14,26,43,.4)", border: "1px solid rgba(201,168,76,.15)", padding: "12px 16px", fontSize: 15, color: "#8a9db5", outline: "none", fontFamily: "inherit" }} />
-            </div>
-            <div style={{ background: "rgba(201,168,76,.08)", border: "1px solid rgba(201,168,76,.2)", padding: "16px 20px", marginBottom: 24 }}>
-              <div style={{ fontFamily: "'Cinzel',serif", fontSize: ".6rem", letterSpacing: ".2em", color: "#c9a84c", textTransform: "uppercase", marginBottom: 10 }}>Before You Begin</div>
-              {["40 questions — answered one at a time","7 minutes to complete the full assessment","Frequency scale: Never · Rarely · Sometimes · Often · Always","Answer each question honestly and independently","Once you advance, you cannot go back"].map((t, i) => (
-                <div key={i} style={{ display: "flex", gap: 8, marginBottom: 6, alignItems: "flex-start" }}>
-                  <span style={{ color: "#c9a84c", fontSize: ".5rem", marginTop: 4, flexShrink: 0 }}>◆</span>
-                  <span style={{ fontSize: ".85rem", color: "#d4c9b0" }}>{t}</span>
+            <div className="before-box">
+              <div className="before-title">Before You Begin</div>
+              {[
+                "40 questions — answered one at a time",
+                "Once you move to the next question, you cannot go back",
+                "7 minutes to complete the full assessment",
+                "Frequency scale: Never · Rarely · Sometimes · Often · Always",
+                "Answer each question honestly and independently",
+              ].map((t, i) => (
+                <div className="before-item" key={i}>
+                  <span className="before-icon">✦</span>
+                  <span>{t}</span>
                 </div>
               ))}
             </div>
-            {nameError && <div style={{ color: "#ef4444", fontSize: ".82rem", marginBottom: 12, fontFamily: "'Cinzel',serif" }}>⚠ {nameError}</div>}
-            <button onClick={handleBegin} className="btn btn-gold" style={{ width: "100%", padding: "14px", fontSize: ".72rem" }}>Begin Assessment →</button>
+            <div className="note-box">
+              <p className="note-text"><strong style={{ fontStyle: "normal", color: "#B8860B" }}>Note:</strong> This assessment is one part of the hiring process and should be used alongside the dealer audition, structured interview, math evaluation, and reference checks. It is not a standalone hiring decision tool.</p>
+            </div>
+            {nameError && <p style={{ fontSize: 12, color: "#DC2626", marginBottom: 12 }}>⚠ {nameError}</p>}
+            <button className="welcome-btn" onClick={handleBegin}>Continue →</button>
           </div>
         </div>
       </div>
