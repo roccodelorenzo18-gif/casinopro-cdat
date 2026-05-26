@@ -532,6 +532,15 @@ function CDATReport({ answers, property, onBack, onNewCandidate }) {
       .rpt-pin-box{background:#fff;border:1px solid #E0DBD0;border-radius:8px;padding:32px;text-align:center;max-width:380px;margin:0 auto 24px}
       .rpt-pin-input{width:100%;border:2px solid #D4CFC4;border-radius:6px;padding:12px;font-size:24px;letter-spacing:8px;text-align:center;font-family:'Playfair Display',serif;color:#1B2A4A;outline:none;margin:12px 0;transition:border-color .2s}
       .rpt-pin-input:focus{border-color:#C9A84C}
+      @media print{
+        *{-webkit-print-color-adjust:exact!important;print-color-adjust:exact!important}
+        .rpt-hdr{background:#1B2A4A!important}
+        .rpt-hdr-gold{background:linear-gradient(to right,#C9A84C,#E8C96A)!important}
+        .rpt-section-hdr{background:#1B2A4A!important}
+        .rpt-bar-fill{print-color-adjust:exact!important}
+        .rpt-flag{background:#FEF2F2!important;border-left:3px solid #DC2626!important}
+        button{display:none!important}
+      }
     `}</style>
     <div className="rpt-wrap">
       {/* Header */}
