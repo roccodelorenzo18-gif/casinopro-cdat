@@ -81,7 +81,7 @@ body{font-family:'Source Sans 3',sans-serif;background:var(--navy);color:var(--c
 .program-subtitle{font-family:'Cinzel',serif;font-size:.65rem;letter-spacing:.2em;color:var(--gold);text-transform:uppercase;margin-bottom:20px;}
 .program-desc{font-size:.95rem;color:var(--text);line-height:1.8;font-weight:300;max-width:680px;margin-bottom:24px;}
 
-.win-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:20px;margin-bottom:40px;}
+.{display:grid;grid-template-columns:repeat(3,1fr);gap:20px;margin-bottom:40px;}
 .win-card{background:rgba(14,26,43,.6);border:1px solid rgba(201,168,76,.15);padding:28px 24px;text-align:center;}
 .win-num{font-family:'Playfair Display',serif;font-size:2.5rem;font-weight:700;color:var(--gold);display:block;margin-bottom:4px;}
 .win-label{font-family:'Cinzel',serif;font-size:.7rem;letter-spacing:.2em;color:var(--cream);text-transform:uppercase;margin-bottom:8px;display:block;}
@@ -107,7 +107,7 @@ body{font-family:'Source Sans 3',sans-serif;background:var(--navy);color:var(--c
 .cta-buttons{display:flex;gap:12px;flex-wrap:wrap;justify-content:center;}
 
 @media(max-width:900px){
-  .assessment-grid,.win-grid,.modules-grid,.outcomes-grid{grid-template-columns:1fr;}
+  .assessment-grid,.,.modules-grid,.outcomes-grid{grid-template-columns:1fr;}
   .section,.training-section,.outcomes-section,.cta-section{padding:48px 24px;}
   .page-hero{padding:48px 24px;}
   .section-divider{margin:0 24px;}
@@ -195,7 +195,7 @@ body{font-family:'Source Sans 3',sans-serif;background:var(--navy);color:var(--c
     <a href="/contact" class="btn-gold">Bring This Program to Your Property ◆</a>
   </div>
 
-  <div class="win-grid">
+  <div class="">
  <div class="win-card"><span class="win-num">Win¹</span><span class="win-label">The Guests Win</span><div class="win-desc">Guests who feel welcomed, entertained, and respected stay longer and come back. A great dealer interaction is the single most powerful driver of guest loyalty.</div></div>
    
  <div class="win-card"><span class="win-num">Win²</span><span class="win-label">The Dealers Win</span><div class="win-desc">Dealers who genuinely engage guests earn more in tokes, receive stronger evaluations, and build a reputation on the floor that advances their career.</div></div>
