@@ -509,81 +509,107 @@ function CDATReport({ answers, property, onBack, onNewCandidate }) {
     else setPinError("Incorrect PIN. Contact CasinoPro Solutions if you need assistance.");
   }
 
+  const traitColor = (p) => p >= 70 ? "#2E7D32" : p >= 50 ? "#E65100" : "#C62828";
+  const traitBg = (p) => p >= 70 ? "#ECFDF5" : p >= 50 ? "#FFF7ED" : "#FEF2F2";
+
   return (
     <><style>{SUITE_STYLES}</style>
-    <div className="report-wrap">
-      <div className="hdr">
-        <div>
-          <div className="hdr-eyebrow">CasinoPro Solutions</div>
-          <div className="hdr-title">CDAT Report</div>
+    <style>{`
+      .rpt-wrap{min-height:100vh;background:#F7F8FA;font-family:'Source Sans 3',sans-serif}
+      .rpt-hdr{background:#1B2A4A;padding:0}
+      .rpt-hdr-top{padding:20px 36px;display:flex;align-items:center;justify-content:space-between}
+      .rpt-hdr-gold{height:3px;background:linear-gradient(to right,#C9A84C,#E8C96A)}
+      .rpt-body{max-width:800px;margin:0 auto;padding:36px 24px 80px}
+      .rpt-section{background:#fff;border:1px solid #E0DBD0;border-radius:8px;margin-bottom:20px;overflow:hidden}
+      .rpt-section-hdr{background:#1B2A4A;padding:12px 20px}
+      .rpt-section-lbl{font-size:10px;letter-spacing:2px;text-transform:uppercase;color:#C9A84C;font-weight:700}
+      .rpt-score-big{font-family:'Playfair Display',serif;font-size:64px;font-weight:700;line-height:1}
+      .rpt-trait-row{display:flex;align-items:center;padding:12px 20px;border-bottom:1px solid #F5F0E8}
+      .rpt-trait-row:last-child{border-bottom:none}
+      .rpt-bar-track{flex:1;height:8px;background:#EAE6DC;border-radius:4px;margin:0 16px}
+      .rpt-bar-fill{height:8px;border-radius:4px;transition:width .8s}
+      .rpt-flag{display:flex;gap:10px;padding:10px 16px;border-left:3px solid #DC2626;margin-bottom:8px;background:#FEF2F2;border-radius:0 4px 4px 0;font-size:13px;color:#DC2626;line-height:1.5}
+      .rpt-pin-box{background:#fff;border:1px solid #E0DBD0;border-radius:8px;padding:32px;text-align:center;max-width:380px;margin:0 auto 24px}
+      .rpt-pin-input{width:100%;border:2px solid #D4CFC4;border-radius:6px;padding:12px;font-size:24px;letter-spacing:8px;text-align:center;font-family:'Playfair Display',serif;color:#1B2A4A;outline:none;margin:12px 0;transition:border-color .2s}
+      .rpt-pin-input:focus{border-color:#C9A84C}
+    `}</style>
+    <div className="rpt-wrap">
+      {/* Header */}
+      <div className="rpt-hdr">
+        <div className="rpt-hdr-top">
+          <div>
+            <div style={{ fontSize: 10, letterSpacing: 3, color: "#C9A84C", fontWeight: 700, textTransform: "uppercase", marginBottom: 4 }}>CasinoPro Solutions</div>
+            <div style={{ fontFamily: "'Playfair Display',serif", color: "#fff", fontSize: 22, fontWeight: 700 }}>CDAT Report</div>
+            <div style={{ fontSize: 12, color: "rgba(255,255,255,.5)", marginTop: 2 }}>Casino Dealer Aptitude Assessment · Confidential</div>
+          </div>
+          <div style={{ display: "flex", gap: 10, alignItems: "center" }}>
+            <div style={{ background: "#C9A84C", color: "#1B2A4A", padding: "5px 14px", fontSize: 11, fontWeight: 700, letterSpacing: 1, borderRadius: 2 }}>{property?.propertyName}</div>
+            <button onClick={onNewCandidate} style={{ background: "rgba(201,168,76,.15)", border: "1px solid rgba(201,168,76,.3)", color: "#C9A84C", padding: "6px 14px", cursor: "pointer", fontSize: 12, borderRadius: 4, fontFamily: "inherit" }}>New Candidate</button>
+            <button onClick={onBack} style={{ background: "transparent", border: "1px solid rgba(255,255,255,.2)", color: "rgba(255,255,255,.7)", padding: "6px 14px", cursor: "pointer", fontSize: 12, borderRadius: 4, fontFamily: "inherit" }}>← Dashboard</button>
+          </div>
         </div>
-        <div style={{ display: "flex", gap: 10 }}>
-          <div className="hdr-badge">{property?.propertyName}</div>
-          <button onClick={onNewCandidate} className="btn btn-ghost" style={{ fontSize: ".58rem" }}>New Candidate</button>
-          <button onClick={onBack} className="btn btn-ghost" style={{ fontSize: ".58rem" }}>← Dashboard</button>
-        </div>
+        <div className="rpt-hdr-gold" />
       </div>
-      <div className="report-content">
 
-        {/* Candidate summary */}
-        <div style={{ textAlign: "center", marginBottom: 40 }}>
-          <div style={{ fontFamily: "'Cinzel',serif", fontSize: ".58rem", letterSpacing: ".4em", color: "#c9a84c", textTransform: "uppercase", marginBottom: 12 }}>Assessment Complete</div>
-          <div style={{ fontFamily: "'Playfair Display',serif", fontSize: "2.2rem", fontWeight: 700, color: "#f7f2e8", marginBottom: 8 }}>CDAT Results</div>
-          <div style={{ fontSize: ".88rem", color: "#8a9db5" }}>Casino Dealer Aptitude Assessment Tool</div>
-        </div>
-
-        {/* Overall score — always visible */}
-        <div style={{ background: "#152338", border: `1px solid ${tier.color}`, padding: 32, textAlign: "center", marginBottom: 32 }}>
-          <div style={{ fontFamily: "'Cinzel',serif", fontSize: ".58rem", letterSpacing: ".3em", color: "#8a9db5", textTransform: "uppercase", marginBottom: 12 }}>Overall Score</div>
-          <div style={{ fontFamily: "'Playfair Display',serif", fontSize: "4rem", fontWeight: 700, color: tier.color, lineHeight: 1 }}>{overall}%</div>
-          <div className="tier-badge" style={{ background: tier.bg, color: tier.color, marginTop: 16 }}>{tier.label}</div>
-          <div style={{ fontSize: ".88rem", color: "#8a9db5", marginTop: 8 }}>{tier.desc}</div>
-        </div>
-
-        {/* Trait scores — always visible */}
-        <div style={{ background: "#152338", border: "1px solid rgba(201,168,76,.2)", padding: 28, marginBottom: 32 }}>
-          <div style={{ fontFamily: "'Cinzel',serif", fontSize: ".62rem", letterSpacing: ".3em", color: "#c9a84c", textTransform: "uppercase", marginBottom: 20 }}>Trait Breakdown</div>
-          {scores.map(s => (
-            <div key={s.trait} className="score-bar-row">
-              <div className="score-bar-label">{s.trait}</div>
-              <div className="score-bar-track">
-                <div className="score-bar-fill" style={{ width: `${s.pct}%`, background: s.pct >= 70 ? "#4caf50" : s.pct >= 50 ? "#E65100" : "#C62828" }} />
-              </div>
-              <div className="score-bar-pct">{s.pct}%</div>
+      <div className="rpt-body">
+        {/* Score + Traits */}
+        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 20, marginBottom: 20 }}>
+          {/* Overall Score */}
+          <div className="rpt-section">
+            <div className="rpt-section-hdr"><div className="rpt-section-lbl">Overall Composite Score</div></div>
+            <div style={{ padding: 28, textAlign: "center" }}>
+              <div className="rpt-score-big" style={{ color: tier.color }}>{overall}<span style={{ fontSize: 28 }}>%</span></div>
+              <div style={{ marginTop: 12, display: "inline-block", padding: "6px 20px", borderRadius: 99, background: tier.bg, color: tier.color, fontWeight: 700, fontSize: 12, letterSpacing: 1, border: `1px solid ${tier.color}40` }}>{tier.label}</div>
+              <div style={{ fontSize: 13, color: "#6B7280", marginTop: 10, lineHeight: 1.5 }}>{tier.desc}</div>
             </div>
-          ))}
+          </div>
+          {/* Trait Breakdown */}
+          <div className="rpt-section">
+            <div className="rpt-section-hdr"><div className="rpt-section-lbl">Trait Breakdown</div></div>
+            <div style={{ padding: "8px 0" }}>
+              {scores.map(s => (
+                <div className="rpt-trait-row" key={s.trait}>
+                  <div style={{ fontSize: 12, fontWeight: 600, color: "#1B2A4A", minWidth: 160 }}>{s.trait}</div>
+                  <div className="rpt-bar-track">
+                    <div className="rpt-bar-fill" style={{ width: `${s.pct}%`, background: traitColor(s.pct) }} />
+                  </div>
+                  <div style={{ fontSize: 14, fontWeight: 700, color: traitColor(s.pct), minWidth: 40, textAlign: "right" }}>{s.pct}%</div>
+                </div>
+              ))}
+            </div>
+          </div>
         </div>
 
-        {/* PIN gate for detailed report */}
+        {/* PIN gate */}
         {!unlocked ? (
-          <div className="pin-gate">
-            <div style={{ fontFamily: "'Cinzel',serif", fontSize: ".62rem", letterSpacing: ".3em", color: "#c9a84c", textTransform: "uppercase", marginBottom: 12 }}>HR Access Required</div>
-            <div style={{ fontSize: ".88rem", color: "#8a9db5", marginBottom: 16, lineHeight: 1.6 }}>Enter your HR PIN to unlock the full report including red flags, analysis, and interview questions.</div>
-            <input className="pin-input" type="password" maxLength={4} placeholder="••••" value={pinInput}
+          <div className="rpt-pin-box">
+            <div style={{ fontSize: 10, letterSpacing: 2, textTransform: "uppercase", color: "#C9A84C", fontWeight: 700, marginBottom: 8 }}>🔐 HR Access Required</div>
+            <div style={{ fontSize: 14, color: "#6B7280", marginBottom: 4, lineHeight: 1.6 }}>Enter your HR PIN to unlock the full report.</div>
+            <input className="rpt-pin-input" type="password" maxLength={4} placeholder="••••" value={pinInput}
               onChange={e => { setPinInput(e.target.value); setPinError(""); }}
               onKeyDown={e => e.key === "Enter" && tryPin()} />
-            {pinError && <div style={{ color: "#ef4444", fontSize: ".78rem", marginBottom: 12, fontFamily: "'Cinzel',serif" }}>{pinError}</div>}
-            <button onClick={tryPin} className="btn btn-gold" style={{ width: "100%", fontSize: ".65rem" }}>Unlock Full Report →</button>
+            {pinError && <div style={{ color: "#DC2626", fontSize: 13, marginBottom: 10 }}>{pinError}</div>}
+            <button onClick={tryPin} style={{ width: "100%", background: "#C9A84C", color: "#1B2A4A", border: "none", borderRadius: 6, padding: "12px", fontSize: 14, fontWeight: 700, cursor: "pointer" }}>Unlock Full Report →</button>
           </div>
         ) : (
           <>
-            {/* Red flags */}
-            {flags.length > 0 && (
-              <div style={{ marginBottom: 32 }}>
-                <div style={{ fontFamily: "'Cinzel',serif", fontSize: ".62rem", letterSpacing: ".3em", color: "#ef4444", textTransform: "uppercase", marginBottom: 16 }}>⚠ Red Flags ({flags.length})</div>
-                {flags.map((f, i) => <div key={i} className="flag-item">⚠ {f}</div>)}
+            {/* Red Flags */}
+            <div className="rpt-section" style={{ marginBottom: 20 }}>
+              <div className="rpt-section-hdr" style={{ background: flags.length > 0 ? "#DC2626" : "#2E7D32" }}>
+                <div className="rpt-section-lbl" style={{ color: "#fff" }}>{flags.length > 0 ? `⚠ Red Flags Detected (${flags.length})` : "✓ No Red Flags Detected"}</div>
               </div>
-            )}
-            {flags.length === 0 && (
-              <div style={{ background: "rgba(46,125,50,.08)", border: "1px solid rgba(46,125,50,.2)", padding: 16, marginBottom: 32, fontFamily: "'Cinzel',serif", fontSize: ".72rem", color: "#4caf50", letterSpacing: ".05em" }}>
-                ✓ No red flags detected — responses appear consistent and genuine.
+              <div style={{ padding: flags.length > 0 ? 16 : 20 }}>
+                {flags.length > 0
+                  ? flags.map((f, i) => <div key={i} className="rpt-flag">⚠ {f}</div>)
+                  : <div style={{ fontSize: 14, color: "#2E7D32", fontWeight: 600 }}>Responses appear consistent and genuine across all traits.</div>
+                }
               </div>
-            )}
+            </div>
 
             {/* HR Analysis */}
-            <div style={{ background: "#152338", border: "1px solid rgba(201,168,76,.2)", padding: 28, marginBottom: 32 }}>
-              <div style={{ fontFamily: "'Cinzel',serif", fontSize: ".62rem", letterSpacing: ".3em", color: "#c9a84c", textTransform: "uppercase", marginBottom: 16 }}>HR Analysis</div>
-              <div style={{ fontSize: ".88rem", color: "#d4c9b0", lineHeight: 1.8 }}>
+            <div className="rpt-section" style={{ marginBottom: 20 }}>
+              <div className="rpt-section-hdr"><div className="rpt-section-lbl">HR Analysis</div></div>
+              <div style={{ padding: 20, fontSize: 14, color: "#374151", lineHeight: 1.8 }}>
                 {overall >= 85 && "This candidate demonstrates an exceptional behavioral profile across all five dealer traits. Their responses reflect a natural aptitude for guest interaction, composure under pressure, and professional dependability. Strongly recommended for advancement in the hiring process."}
                 {overall >= 70 && overall < 85 && "This candidate shows a strong overall profile with above-average scores in most trait areas. Minor gaps noted but are consistent with trainable behaviors. Recommended for interview with focused questions on lower-scoring areas."}
                 {overall >= 55 && overall < 70 && "This candidate presents a mixed profile. Strengths exist but are offset by meaningful gaps in key dealer traits. Proceed with caution and use the suggested interview questions to explore potential concerns."}
@@ -591,22 +617,26 @@ function CDATReport({ answers, property, onBack, onNewCandidate }) {
               </div>
             </div>
 
-            {/* Suggested interview questions */}
-            <div style={{ background: "#152338", border: "1px solid rgba(201,168,76,.2)", padding: 28, marginBottom: 32 }}>
-              <div style={{ fontFamily: "'Cinzel',serif", fontSize: ".62rem", letterSpacing: ".3em", color: "#c9a84c", textTransform: "uppercase", marginBottom: 16 }}>Suggested Interview Questions</div>
-              {interviewQs.map((q, i) => (
-                <div key={i} style={{ display: "flex", gap: 12, marginBottom: 14, alignItems: "flex-start" }}>
-                  <div style={{ color: "#c9a84c", fontFamily: "'Cinzel',serif", fontSize: ".7rem", marginTop: 2, flexShrink: 0 }}>{i + 1}.</div>
-                  <div style={{ fontSize: ".88rem", color: "#d4c9b0", lineHeight: 1.7 }}>{q}</div>
+            {/* Interview Questions */}
+            {interviewQs.length > 0 && (
+              <div className="rpt-section" style={{ marginBottom: 20 }}>
+                <div className="rpt-section-hdr"><div className="rpt-section-lbl">Suggested Interview Questions</div></div>
+                <div style={{ padding: 20 }}>
+                  {interviewQs.map((q, i) => (
+                    <div key={i} style={{ display: "flex", gap: 12, marginBottom: 14, padding: "10px 14px", background: "#F5F0E8", borderRadius: 6, border: "1px solid #E0DBD0" }}>
+                      <span style={{ fontWeight: 700, color: "#C9A84C", flexShrink: 0 }}>{i + 1}.</span>
+                      <span style={{ fontSize: 14, color: "#374151", lineHeight: 1.6 }}>{q}</span>
+                    </div>
+                  ))}
                 </div>
-              ))}
-            </div>
+              </div>
+            )}
 
             {/* Actions */}
             <div style={{ display: "flex", gap: 12, justifyContent: "center", flexWrap: "wrap" }}>
-              <button onClick={() => window.print()} className="btn btn-gold" style={{ fontSize: ".65rem" }}>Print Report ◆</button>
-              <button onClick={onNewCandidate} className="btn btn-navy" style={{ fontSize: ".65rem" }}>New Candidate →</button>
-              <button onClick={onBack} className="btn btn-ghost" style={{ fontSize: ".65rem" }}>← Back to Dashboard</button>
+              <button onClick={() => window.print()} style={{ background: "#C9A84C", color: "#1B2A4A", border: "none", borderRadius: 6, padding: "11px 26px", fontSize: 13, fontWeight: 700, cursor: "pointer" }}>⬇ Print Report</button>
+              <button onClick={onNewCandidate} style={{ background: "#1B2A4A", color: "#C9A84C", border: "none", borderRadius: 6, padding: "11px 26px", fontSize: 13, fontWeight: 700, cursor: "pointer" }}>New Candidate →</button>
+              <button onClick={onBack} style={{ background: "transparent", color: "#6B7280", border: "1px solid #E0DBD0", borderRadius: 6, padding: "11px 26px", fontSize: 13, fontWeight: 700, cursor: "pointer" }}>← Dashboard</button>
             </div>
           </>
         )}
