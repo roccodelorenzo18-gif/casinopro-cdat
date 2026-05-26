@@ -162,20 +162,20 @@ const SUITE_STYLES = `
   .field input,.field select{background:#0e1a2b;border:1px solid rgba(201,168,76,.2);color:#f7f2e8;padding:9px 13px;font-size:13px;outline:none;font-family:inherit}
   .field input:focus,.field select:focus{border-color:#c9a84c}
   .form-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
-  .q-wrap{min-height:100vh;background:#0e1a2b;display:flex;flex-direction:column}
-  .q-progress{height:3px;background:rgba(201,168,76,.15)}
-  .q-progress-fill{height:3px;background:#c9a84c;transition:width .4s}
+  .q-wrap{min-height:100vh;background:#F7F8FA;display:flex;flex-direction:column}
+  .q-progress{height:4px;background:#E8EAED}
+  .q-progress-fill{height:4px;background:#B8860B;transition:width .4s}
   .q-center{flex:1;display:flex;align-items:center;justify-content:center;padding:40px 20px}
-  .q-card{background:#152338;border:1px solid rgba(201,168,76,.2);width:100%;max-width:640px;padding:48px}
-  .q-num{font-family:'Cinzel',serif;font-size:.58rem;letter-spacing:.3em;color:#c9a84c;text-transform:uppercase;margin-bottom:20px}
-  .q-text{font-family:'Playfair Display',serif;font-size:1.35rem;font-weight:700;color:#f7f2e8;line-height:1.55;margin-bottom:36px}
+  .q-card{background:#fff;border:1px solid #E8EAED;border-radius:16px;box-shadow:0 10px 15px rgba(0,0,0,.06);width:100%;max-width:640px;padding:48px}
+  .q-num{font-size:12px;font-weight:600;color:#B8860B;letter-spacing:1px;text-transform:uppercase;margin-bottom:20px}
+  .q-text{font-family:'Playfair Display',serif;font-size:1.35rem;font-weight:700;color:#111827;line-height:1.6;margin-bottom:36px}
   .q-options{display:flex;flex-direction:column;gap:10px}
-  .q-option{background:rgba(14,26,43,.6);border:1.5px solid rgba(201,168,76,.2);padding:14px 20px;font-size:.88rem;color:#d4c9b0;cursor:pointer;transition:all .15s;text-align:left;font-family:'Source Sans 3',sans-serif;display:flex;align-items:center;gap:14px}
-  .q-option:hover{border-color:#c9a84c;color:#f7f2e8;background:rgba(201,168,76,.06)}
-  .q-option.selected{border-color:#c9a84c;background:rgba(201,168,76,.12);color:#f7f2e8}
-  .q-option-dot{width:18px;height:18px;border-radius:50%;border:2px solid rgba(201,168,76,.4);flex-shrink:0;display:flex;align-items:center;justify-content:center;transition:all .15s}
-  .q-option.selected .q-option-dot{background:#c9a84c;border-color:#c9a84c}
-  .q-option-dot-inner{width:7px;height:7px;border-radius:50%;background:#0e1a2b}
+  .q-option{background:#fff;border:1.5px solid #D1D5DB;border-radius:10px;padding:14px 20px;font-size:15px;color:#374151;cursor:pointer;transition:all .12s;text-align:left;font-family:'Source Sans 3',sans-serif;display:flex;align-items:center;gap:16px}
+  .q-option:hover{border-color:#B8860B;background:#FDF8EC;color:#111827}
+  .q-option.selected{border-color:#B8860B;background:#FDF8EC;color:#B8860B;font-weight:700}
+  .q-option-dot{width:20px;height:20px;border-radius:50%;border:2px solid #D1D5DB;flex-shrink:0;display:flex;align-items:center;justify-content:center;transition:all .12s}
+  .q-option.selected .q-option-dot{background:#B8860B;border-color:#B8860B}
+  .q-option-dot-inner{width:8px;height:8px;border-radius:50%;background:#fff}
   .report-wrap{background:#0e1a2b;min-height:100vh}
   .report-content{max-width:760px;margin:0 auto;padding:48px 32px}
   .tier-badge{display:inline-block;padding:8px 24px;font-family:'Cinzel',serif;font-size:.72rem;font-weight:700;letter-spacing:.2em;text-transform:uppercase;margin-bottom:16px}
@@ -459,16 +459,13 @@ function CDATAssessment({ onComplete, onBack }) {
   return (
     <><style>{SUITE_STYLES}</style>
     <div className="q-wrap" ref={topRef}>
-      <div className="hdr">
-        <div>
-          <div className="hdr-eyebrow">CasinoPro Solutions — {candName}</div>
-          <div className="hdr-title">CDAT Assessment</div>
+      <div style={{ background: "#fff", borderBottom: "1px solid #E8EAED", height: 56, display: "flex", alignItems: "center", justifyContent: "space-between", padding: "0 32px", position: "sticky", top: 0, zIndex: 50, boxShadow: "0 1px 3px rgba(0,0,0,.08)" }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+          <span style={{ fontSize: 18 }}>🃏</span>
+          <span style={{ fontFamily: "'Playfair Display',serif", fontSize: 16, fontWeight: 700, color: "#B8860B", letterSpacing: 2 }}>CDAT</span>
+          <span style={{ fontSize: 12, color: "#9CA3AF" }}>· {candName}</span>
         </div>
-        <div style={{ display: "flex", gap: 10, alignItems: "center" }}>
-          <Timer seconds={420} onExpire={handleExpire} />
-          <div className="hdr-badge">Question {current + 1} of {QUESTIONS.length}</div>
-          <button onClick={onBack} className="btn btn-ghost" style={{ fontSize: ".58rem" }}>← Back</button>
-        </div>
+        <Timer seconds={420} onExpire={handleExpire} />
       </div>
       <div className="q-progress"><div className="q-progress-fill" style={{ width: `${progress}%` }} /></div>
       <div className="q-center">
