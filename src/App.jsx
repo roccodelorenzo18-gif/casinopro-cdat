@@ -1,18 +1,106 @@
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect, useCallback } from "react";
 
-const CODES_KEY = "cdat_property_codes";
+// ── SUPABASE CONFIG ───────────────────────────────────────────────────────────
+const SUPABASE_URL = "https://lqypjbgphjvvwnjihurk.supabase.co";
+const SUPABASE_KEY = "sb_publishable__IW1ckNtDxvI8eDxa_NtgA_ZtlgCPry";
+
+async function sbFetch(path, options = {}) {
+  const res = await fetch(`${SUPABASE_URL}/rest/v1/${path}`, {
+    headers: {
+      "apikey": SUPABASE_KEY,
+      "Authorization": `Bearer ${SUPABASE_KEY}`,
+      "Content-Type": "application/json",
+      "Prefer": options.prefer || "return=representation",
+      ...options.headers,
+    },
+    ...options,
+  });
+  if (!res.ok) {
+    const err = await res.text();
+    throw new Error(err);
+  }
+  const text = await res.text();
+  return text ? JSON.parse(text) : null;
+}
+
+async function getAllCodes() {
+  try {
+    const data = await sbFetch("property_codes?select=*");
+    const map = {};
+    (data || []).forEach(r => {
+      map[r.code] = {
+        code: r.code,
+        propertyName: r.property_name,
+        contactName: r.contact_name,
+        email: r.email,
+        plan: r.plan,
+        hrPin: r.hr_pin,
+        used: r.used,
+        freeLimit: r.free_limit,
+        createdAt: r.created_at,
+        lastUsed: r.last_used,
+      };
+    });
+    return map;
+  } catch { return {}; }
+}
+
+async function getCodeFromDB(code) {
+  try {
+    const data = await sbFetch(`property_codes?code=eq.${encodeURIComponent(code.toUpperCase())}&select=*`);
+    if (!data || data.length === 0) return null;
+    const r = data[0];
+    return {
+      code: r.code, propertyName: r.property_name, contactName: r.contact_name,
+      email: r.email, plan: r.plan, hrPin: r.hr_pin, used: r.used,
+      freeLimit: r.free_limit, createdAt: r.created_at, lastUsed: r.last_used,
+    };
+  } catch { return null; }
+}
+
+async function createCode(rec) {
+  return sbFetch("property_codes", {
+    method: "POST",
+    prefer: "return=representation",
+    body: JSON.stringify({
+      code: rec.code, property_name: rec.propertyName, contact_name: rec.contactName,
+      email: rec.email, plan: rec.plan, hr_pin: rec.hrPin,
+      used: 0, free_limit: rec.freeLimit,
+    }),
+  });
+}
+
+async function deleteCodeFromDB(code) {
+  return sbFetch(`property_codes?code=eq.${encodeURIComponent(code)}`, { method: "DELETE", prefer: "" });
+}
+
+async function resetUsageInDB(code) {
+  return sbFetch(`property_codes?code=eq.${encodeURIComponent(code)}`, {
+    method: "PATCH", body: JSON.stringify({ used: 0 }),
+  });
+}
+
+async function upgradeCodeInDB(code) {
+  return sbFetch(`property_codes?code=eq.${encodeURIComponent(code)}`, {
+    method: "PATCH", body: JSON.stringify({ plan: "unlimited", free_limit: 9999 }),
+  });
+}
+
+async function incrementUsageInDB(code) {
+  try {
+    const rec = await getCodeFromDB(code);
+    if (!rec) return;
+    await sbFetch(`property_codes?code=eq.${encodeURIComponent(code.toUpperCase())}`, {
+      method: "PATCH",
+      body: JSON.stringify({ used: (rec.used || 0) + 1, last_used: new Date().toISOString() }),
+    });
+  } catch {}
+}
+
 const FREE_LIMIT = 10;
 const ADMIN_PIN = "CDAT2025";
 const WARN_AT = 5;
 
-function getCodes() { try { return JSON.parse(localStorage.getItem(CODES_KEY) || "{}"); } catch { return {}; } }
-function getCode(c) { if (!c) return null; return getCodes()[c.toUpperCase()] || null; }
-function incrementUsage(code) {
-  const codes = getCodes(); const rec = codes[code.toUpperCase()];
-  if (!rec) return; rec.used = (rec.used || 0) + 1; rec.lastUsed = new Date().toISOString();
-  localStorage.setItem(CODES_KEY, JSON.stringify(codes));
-}
-function saveCodes(c) { localStorage.setItem(CODES_KEY, JSON.stringify(c)); }
 function genPin() { return String(Math.floor(1000 + Math.random() * 9000)); }
 
 const C = {
@@ -370,11 +458,7 @@ function CDATAssessment({ onComplete, onBack }) {
               );
             })}
           </div>
-          {current > 0 && (
-            <div style={{ marginTop: 24, textAlign: "center" }}>
-              <button onClick={() => setCurrent(current - 1)} className="btn btn-ghost" style={{ fontSize: ".6rem", padding: "8px 20px" }}>← Previous</button>
-            </div>
-          )}
+
         </div>
       </div>
     </div></>
@@ -505,7 +589,8 @@ function CDATReport({ answers, property, onBack, onNewCandidate }) {
 
 // ── ADMIN DASHBOARD ───────────────────────────────────────────────────────────
 function AdminDashboard({ onClose }) {
-  const [codes, setCodes] = useState(getCodes());
+  const [codes, setCodes] = useState({});
+  const [loading, setLoading] = useState(true);
   const [newCode, setNewCode] = useState("");
   const [newName, setNewName] = useState("");
   const [newContact, setNewContact] = useState("");
@@ -513,44 +598,59 @@ function AdminDashboard({ onClose }) {
   const [newPlan, setNewPlan] = useState("trial");
   const [msg, setMsg] = useState("");
 
-  function refresh() { setCodes(getCodes()); }
+  async function refresh() {
+    setLoading(true);
+    const data = await getAllCodes();
+    setCodes(data);
+    setLoading(false);
+  }
 
-  function addCode() {
+  useEffect(() => { refresh(); }, []);
+
+  async function addCode() {
     if (!newCode.trim() || !newName.trim()) { setMsg("Code and property name are required."); return; }
-    const existing = getCodes();
     const key = newCode.trim().toUpperCase();
-    if (existing[key]) { setMsg(`Code ${key} already exists.`); return; }
-    existing[key] = {
-      code: key, propertyName: newName.trim(),
-      contactName: newContact.trim(), email: newEmail.trim(),
-      plan: newPlan, hrPin: genPin(),
-      used: 0, freeLimit: FREE_LIMIT,
-      createdAt: new Date().toISOString(), lastUsed: null
-    };
-    saveCodes(existing);
-    setMsg(`✓ Code ${key} created. HR PIN: ${existing[key].hrPin}`);
-    setNewCode(""); setNewName(""); setNewContact(""); setNewEmail(""); setNewPlan("trial");
+    if (codes[key]) { setMsg(`Code ${key} already exists.`); return; }
+    const pin = genPin();
+    try {
+      await createCode({
+        code: key, propertyName: newName.trim(),
+        contactName: newContact.trim(), email: newEmail.trim(),
+        plan: newPlan, hrPin: pin, freeLimit: FREE_LIMIT,
+      });
+      setMsg(`✓ Code ${key} created. HR PIN: ${pin}`);
+      setNewCode(""); setNewName(""); setNewContact(""); setNewEmail(""); setNewPlan("trial");
+      refresh();
+    } catch(e) { setMsg("Error creating code. Please try again."); }
+  }
+
+  async function deleteCode(key) {
+    if (!window.confirm(`Delete code ${key}?`)) return;
+    await deleteCodeFromDB(key);
     refresh();
   }
 
-  function deleteCode(key) {
-    if (!window.confirm(`Delete code ${key}?`)) return;
-    const c = getCodes(); delete c[key]; saveCodes(c); refresh();
+  async function resetUsage(key) {
+    await resetUsageInDB(key);
+    refresh();
   }
 
-  function resetUsage(key) {
-    const c = getCodes(); if (c[key]) { c[key].used = 0; saveCodes(c); refresh(); }
-  }
-
-  function upgradeCode(key) {
-    const c = getCodes();
-    if (c[key]) { c[key].plan = "unlimited"; c[key].freeLimit = 9999; saveCodes(c); refresh(); }
+  async function upgradeCode(key) {
+    await upgradeCodeInDB(key);
+    refresh();
   }
 
   const entries = Object.values(codes);
   const totalUsed = entries.reduce((a, r) => a + (r.used || 0), 0);
   const activeProps = entries.filter(r => (r.used || 0) > 0).length;
   const trialExpired = entries.filter(r => r.plan === "trial" && (r.used || 0) >= (r.freeLimit || FREE_LIMIT)).length;
+
+  if (loading && entries.length === 0) return (
+    <><style>{SUITE_STYLES}</style>
+    <div style={{ minHeight: "100vh", background: "#0e1a2b", display: "flex", alignItems: "center", justifyContent: "center" }}>
+      <div style={{ textAlign: "center", color: "#c9a84c", fontFamily: "'Cinzel',serif", fontSize: ".72rem", letterSpacing: ".3em" }}>LOADING...</div>
+    </div></>
+  );
 
   return (
     <><style>{SUITE_STYLES}</style>
@@ -658,11 +758,15 @@ export default function App() {
     if (next >= 3) { setLogoClickCount(0); setPhase("admin"); }
   }
 
-  function handleEnterCode() {
+  const [codeLoading, setCodeLoading] = useState(false);
+
+  async function handleEnterCode() {
     const code = codeInput.trim().toUpperCase();
     if (!code) { setCodeError("Please enter your property code."); return; }
     if (code === ADMIN_PIN.toUpperCase()) { setPhase("admin"); return; }
-    const rec = getCode(code);
+    setCodeLoading(true);
+    const rec = await getCodeFromDB(code);
+    setCodeLoading(false);
     if (!rec) { setCodeError("Code not recognized. Please contact CasinoPro Solutions."); return; }
     const limit = rec.plan === "unlimited" ? Infinity : (rec.freeLimit || FREE_LIMIT);
     if (rec.plan === "trial" && (rec.used || 0) >= limit) {
@@ -671,10 +775,9 @@ export default function App() {
     setProperty(rec); setPropertyCode(code); setPhase("suite"); scrollTop();
   }
 
-  function launchCDAT() {
-    incrementUsage(propertyCode);
-    // Refresh property from storage to get updated used count
-    const updated = getCode(propertyCode);
+  async function launchCDAT() {
+    await incrementUsageInDB(propertyCode);
+    const updated = await getCodeFromDB(propertyCode);
     setProperty(updated);
     setCdatAnswers(null);
     setPhase("cdat");
@@ -754,7 +857,7 @@ export default function App() {
                 onChange={e => { setCodeInput(e.target.value.toUpperCase()); setCodeError(""); }}
                 onKeyDown={e => e.key === "Enter" && handleEnterCode()} autoFocus />
               {codeError && <div className="gate-error">⚠ {codeError}</div>}
-              <button className="btn btn-gold" style={{ width: "100%", marginTop: 16, padding: "13px", fontSize: ".72rem" }} onClick={handleEnterCode}>Enter →</button>
+              <button className="btn btn-gold" style={{ width: "100%", marginTop: 16, padding: "13px", fontSize: ".72rem" }} onClick={handleEnterCode} disabled={codeLoading}>{codeLoading ? "Checking..." : "Enter →"}</button>
               <div style={{ fontSize: ".75rem", color: "#8a9db5", textAlign: "center", marginTop: 12 }}>
                 Don't have a code? Contact <strong style={{ color: "#c9a84c" }}>CasinoPro Solutions</strong> to get started.
               </div>
