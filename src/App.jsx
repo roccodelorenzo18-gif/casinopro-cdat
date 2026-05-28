@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect, useCallback } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 
 // ── SUPABASE CONFIG ───────────────────────────────────────────────────────────
 const SUPABASE_URL = "https://lqypjbgphjvvwnjihurk.supabase.co";
@@ -15,10 +15,7 @@ async function sbFetch(path, options = {}) {
     },
     ...options,
   });
-  if (!res.ok) {
-    const err = await res.text();
-    throw new Error(err);
-  }
+  if (!res.ok) { const err = await res.text(); throw new Error(err); }
   const text = await res.text();
   return text ? JSON.parse(text) : null;
 }
@@ -28,18 +25,7 @@ async function getAllCodes() {
     const data = await sbFetch("property_codes?select=*");
     const map = {};
     (data || []).forEach(r => {
-      map[r.code] = {
-        code: r.code,
-        propertyName: r.property_name,
-        contactName: r.contact_name,
-        email: r.email,
-        plan: r.plan,
-        hrPin: r.hr_pin,
-        used: r.used,
-        freeLimit: r.free_limit,
-        createdAt: r.created_at,
-        lastUsed: r.last_used,
-      };
+      map[r.code] = { code: r.code, propertyName: r.property_name, contactName: r.contact_name, email: r.email, plan: r.plan, hrPin: r.hr_pin, used: r.used, freeLimit: r.free_limit, createdAt: r.created_at, lastUsed: r.last_used };
     });
     return map;
   } catch { return {}; }
@@ -50,24 +36,12 @@ async function getCodeFromDB(code) {
     const data = await sbFetch(`property_codes?code=eq.${encodeURIComponent(code.toUpperCase())}&select=*`);
     if (!data || data.length === 0) return null;
     const r = data[0];
-    return {
-      code: r.code, propertyName: r.property_name, contactName: r.contact_name,
-      email: r.email, plan: r.plan, hrPin: r.hr_pin, used: r.used,
-      freeLimit: r.free_limit, createdAt: r.created_at, lastUsed: r.last_used,
-    };
+    return { code: r.code, propertyName: r.property_name, contactName: r.contact_name, email: r.email, plan: r.plan, hrPin: r.hr_pin, used: r.used, freeLimit: r.free_limit, createdAt: r.created_at, lastUsed: r.last_used };
   } catch { return null; }
 }
 
 async function createCode(rec) {
-  return sbFetch("property_codes", {
-    method: "POST",
-    prefer: "return=representation",
-    body: JSON.stringify({
-      code: rec.code, property_name: rec.propertyName, contact_name: rec.contactName,
-      email: rec.email, plan: rec.plan, hr_pin: rec.hrPin,
-      used: 0, free_limit: rec.freeLimit,
-    }),
-  });
+  return sbFetch("property_codes", { method: "POST", prefer: "return=representation", body: JSON.stringify({ code: rec.code, property_name: rec.propertyName, contact_name: rec.contactName, email: rec.email, plan: rec.plan, hr_pin: rec.hrPin, used: 0, free_limit: rec.freeLimit }) });
 }
 
 async function deleteCodeFromDB(code) {
@@ -75,41 +49,41 @@ async function deleteCodeFromDB(code) {
 }
 
 async function resetUsageInDB(code) {
-  return sbFetch(`property_codes?code=eq.${encodeURIComponent(code)}`, {
-    method: "PATCH", body: JSON.stringify({ used: 0 }),
-  });
+  return sbFetch(`property_codes?code=eq.${encodeURIComponent(code)}`, { method: "PATCH", body: JSON.stringify({ used: 0 }) });
 }
 
 async function upgradeCodeInDB(code) {
-  return sbFetch(`property_codes?code=eq.${encodeURIComponent(code)}`, {
-    method: "PATCH", body: JSON.stringify({ plan: "unlimited", free_limit: 9999 }),
-  });
+  return sbFetch(`property_codes?code=eq.${encodeURIComponent(code)}`, { method: "PATCH", body: JSON.stringify({ plan: "unlimited", free_limit: 9999 }) });
 }
 
 async function incrementUsageInDB(code) {
   try {
     const rec = await getCodeFromDB(code);
     if (!rec) return;
-    await sbFetch(`property_codes?code=eq.${encodeURIComponent(code.toUpperCase())}`, {
-      method: "PATCH",
-      body: JSON.stringify({ used: (rec.used || 0) + 1, last_used: new Date().toISOString() }),
-    });
+    await sbFetch(`property_codes?code=eq.${encodeURIComponent(code.toUpperCase())}`, { method: "PATCH", body: JSON.stringify({ used: (rec.used || 0) + 1, last_used: new Date().toISOString() }) });
   } catch {}
 }
 
 const FREE_LIMIT = 10;
 const ADMIN_PIN = "CDAT2025";
 const WARN_AT = 5;
-
 function genPin() { return String(Math.floor(1000 + Math.random() * 9000)); }
 
+// ── DESIGN TOKENS ─────────────────────────────────────────────────────────────
 const C = {
-  navy: "#0e1a2b", navyMid: "#152338", navyLt: "#1e3050",
-  gold: "#c9a84c", goldLt: "#e3c478",
-  cream: "#f7f2e8", text: "#d4c9b0", muted: "#8a9db5",
-  success: "#2E7D32", warn: "#E65100", danger: "#C62828",
+  white:"#FFFFFF",bg:"#F7F8FA",border:"#E8EAED",gold:"#B8860B",goldBg:"#FDF8EC",goldBorder:"#E8D5A3",
+  text:"#111827",textMid:"#374151",textMuted:"#6B7280",textFaint:"#9CA3AF",
+  green:"#059669",greenBg:"#ECFDF5",greenBorder:"#A7F3D0",
+  amber:"#D97706",amberBg:"#FFFBEB",amberBorder:"#FDE68A",
+  red:"#DC2626",redBg:"#FEF2F2",redBorder:"#FECACA",
+  shadow:"0 1px 3px rgba(0,0,0,0.08), 0 1px 2px rgba(0,0,0,0.04)",
+  shadowMd:"0 4px 6px rgba(0,0,0,0.07), 0 2px 4px rgba(0,0,0,0.04)",
+  shadowLg:"0 10px 15px rgba(0,0,0,0.06), 0 4px 6px rgba(0,0,0,0.04)",
+  navy:"#0e1a2b",navyMid:"#152338",navyLt:"#1e3050",
+  suiteGold:"#c9a84c",suiteGoldLt:"#e3c478",cream:"#f7f2e8",suiteMuted:"#8a9db5",
 };
 
+// ── SUITE STYLES (for gate/dashboard/admin) ────────────────────────────────
 const SUITE_STYLES = `
   @import url('https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;700&family=Playfair+Display:ital,wght@0,700;1,400&family=Source+Sans+3:wght@300;400;500;600&display=swap');
   *{box-sizing:border-box;margin:0;padding:0}
@@ -162,633 +136,863 @@ const SUITE_STYLES = `
   .field input,.field select{background:#0e1a2b;border:1px solid rgba(201,168,76,.2);color:#f7f2e8;padding:9px 13px;font-size:13px;outline:none;font-family:inherit}
   .field input:focus,.field select:focus{border-color:#c9a84c}
   .form-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
-  .q-wrap{min-height:100vh;background:#F7F8FA;display:flex;flex-direction:column}
-  .q-progress{height:4px;background:#E8EAED}
-  .q-progress-fill{height:4px;background:#B8860B;transition:width .4s}
-  .q-center{flex:1;display:flex;align-items:center;justify-content:center;padding:40px 20px}
-  .q-card{background:#fff;border:1px solid #E8EAED;border-radius:16px;box-shadow:0 10px 15px rgba(0,0,0,.06);width:100%;max-width:640px;padding:48px}
-  .q-num{font-size:12px;font-weight:600;color:#B8860B;letter-spacing:1px;text-transform:uppercase;margin-bottom:20px}
-  .q-text{font-family:'Playfair Display',serif;font-size:1.35rem;font-weight:700;color:#111827;line-height:1.6;margin-bottom:36px}
-  .q-options{display:flex;flex-direction:column;gap:10px}
-  .q-option{background:#fff;border:1.5px solid #D1D5DB;border-radius:10px;padding:14px 20px;font-size:15px;color:#374151;cursor:pointer;transition:all .12s;text-align:left;font-family:'Source Sans 3',sans-serif;display:flex;align-items:center;gap:16px}
-  .q-option:hover{border-color:#B8860B;background:#FDF8EC;color:#111827}
-  .q-option.selected{border-color:#B8860B;background:#FDF8EC;color:#B8860B;font-weight:700}
-  .q-option-dot{width:20px;height:20px;border-radius:50%;border:2px solid #D1D5DB;flex-shrink:0;display:flex;align-items:center;justify-content:center;transition:all .12s}
-  .q-option.selected .q-option-dot{background:#B8860B;border-color:#B8860B}
-  .q-option-dot-inner{width:8px;height:8px;border-radius:50%;background:#fff}
-  .report-wrap{background:#0e1a2b;min-height:100vh}
-  .report-content{max-width:760px;margin:0 auto;padding:48px 32px}
-  .tier-badge{display:inline-block;padding:8px 24px;font-family:'Cinzel',serif;font-size:.72rem;font-weight:700;letter-spacing:.2em;text-transform:uppercase;margin-bottom:16px}
-  .score-bar-row{display:flex;align-items:center;gap:16px;margin-bottom:14px}
-  .score-bar-label{font-family:'Cinzel',serif;font-size:.6rem;letter-spacing:.12em;color:#8a9db5;text-transform:uppercase;width:180px;flex-shrink:0}
-  .score-bar-track{flex:1;height:6px;background:rgba(201,168,76,.1);border-radius:3px}
-  .score-bar-fill{height:6px;border-radius:3px;transition:width .8s}
-  .score-bar-pct{font-family:'Cinzel',serif;font-size:.62rem;color:#c9a84c;width:36px;text-align:right}
-  .flag-item{background:rgba(198,40,40,.08);border:1px solid rgba(198,40,40,.2);padding:12px 16px;margin-bottom:8px;font-size:.85rem;color:#d4c9b0;display:flex;gap:10px;align-items:flex-start}
-  .pin-gate{background:#152338;border:1px solid rgba(201,168,76,.2);padding:32px;text-align:center;max-width:400px;margin:0 auto 40px}
-  .pin-input{background:#0e1a2b;border:1.5px solid rgba(201,168,76,.3);padding:13px 16px;font-size:24px;letter-spacing:8px;text-align:center;font-family:'Playfair Display',serif;color:#f7f2e8;outline:none;width:100%;margin:12px 0}
-  .pin-input:focus{border-color:#c9a84c}
+  @keyframes timerPulse{0%,100%{opacity:1}50%{opacity:0.35}}
+  @keyframes shakeAnim{0%,100%{transform:translateX(0)}20%{transform:translateX(-6px)}40%{transform:translateX(6px)}60%{transform:translateX(-4px)}80%{transform:translateX(4px)}}
 `;
 
-// ── CDAT QUESTIONS ────────────────────────────────────────────────────────────
+// ── PDF GENERATION ────────────────────────────────────────────────────────────
+async function loadJsPDF() {
+  if (window.jspdf) return window.jspdf.jsPDF;
+  return new Promise((resolve, reject) => {
+    const s = document.createElement("script");
+    s.src = "https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js";
+    s.onload = () => resolve(window.jspdf.jsPDF);
+    s.onerror = reject;
+    document.head.appendChild(s);
+  });
+}
+
+async function generateHRPdf(applicant, results) {
+  const JsPDF = await loadJsPDF();
+  const doc = new JsPDF({ unit: "mm", format: "a4" });
+  const pw=210,lm=18,rm=18,cw=pw-lm-rm; let y=0;
+  const gold=[184,134,11],dark=[17,24,39],mid=[55,65,81],muted=[107,114,128];
+  const green=[5,150,105],amber=[217,119,6],red=[220,38,38],white=[255,255,255];
+  const bg=[247,248,250],border=[232,234,237];
+  const {traitResults,overall,recommendation,totalRedFlags,inconsistencies,interviewQs}=results;
+  const mins=Math.floor(results.timeTaken/60),secs=results.timeTaken%60;
+  function recCol(){return recommendation==="RECOMMEND TO HIRE"?green:recommendation==="PROCEED WITH CAUTION"?amber:red;}
+  function traitCol(p){return p>=75?green:p>=55?amber:red;}
+  doc.setFillColor(...[17,24,39]);doc.rect(0,0,pw,28,"F");
+  doc.setFillColor(...gold);doc.rect(0,26,pw,2,"F");
+  doc.setFont("helvetica","bold");doc.setFontSize(18);doc.setTextColor(...white);
+  doc.text("CDAT",lm,13);
+  doc.setFontSize(9);doc.setFont("helvetica","normal");doc.setTextColor(180,180,180);
+  doc.text("Casino Dealer Aptitude Assessment  |  CONFIDENTIAL HR REPORT",lm+22,13);
+  doc.setTextColor(...gold);doc.setFontSize(8);
+  doc.text("FOR AUTHORIZED PERSONNEL ONLY",pw-rm,20,{align:"right"});
+  y=36;
+  doc.setFillColor(...bg);doc.setDrawColor(...border);doc.setLineWidth(0.3);
+  doc.roundedRect(lm,y,cw,22,3,3,"FD");
+  doc.setFont("helvetica","bold");doc.setFontSize(13);doc.setTextColor(...dark);
+  doc.text(applicant.name,lm+6,y+8);
+  doc.setFont("helvetica","normal");doc.setFontSize(9);doc.setTextColor(...muted);
+  doc.text(applicant.position,lm+6,y+14);
+  [["Date",applicant.date],["Time Taken",`${mins}m ${secs}s`]].forEach(([label,val],i)=>{
+    const x=lm+(cw/2)*i+cw/4+40;
+    doc.setFont("helvetica","bold");doc.setFontSize(7);doc.setTextColor(...muted);
+    doc.text(label.toUpperCase(),x,y+8,{align:"center"});
+    doc.setFont("helvetica","bold");doc.setFontSize(9);doc.setTextColor(...dark);
+    doc.text(val,x,y+15,{align:"center"});
+  });
+  y+=30;
+  const scoreBoxW=58,radarBoxW=cw-scoreBoxW-6;
+  doc.setFillColor(...white);doc.setDrawColor(...recCol());doc.setLineWidth(0.5);
+  doc.roundedRect(lm,y,scoreBoxW,38,3,3,"FD");
+  doc.setFont("helvetica","bold");doc.setFontSize(7);doc.setTextColor(...muted);
+  doc.text("OVERALL COMPOSITE SCORE",lm+scoreBoxW/2,y+6,{align:"center"});
+  doc.setFont("helvetica","bold");doc.setFontSize(34);doc.setTextColor(...recCol());
+  doc.text(`${overall}%`,lm+scoreBoxW/2,y+22,{align:"center"});
+  const pillY=y+27;
+  doc.setFillColor(...recCol());doc.roundedRect(lm+6,pillY,scoreBoxW-12,7,2,2,"F");
+  doc.setFont("helvetica","bold");doc.setFontSize(7);doc.setTextColor(...white);
+  doc.text(recommendation,lm+scoreBoxW/2,pillY+5,{align:"center"});
+  if(totalRedFlags>0){doc.setFont("helvetica","bold");doc.setFontSize(7);doc.setTextColor(...red);doc.text(`${totalRedFlags} red flag${totalRedFlags>1?"s":""}`,lm+scoreBoxW/2,y+37,{align:"center"});}
+  const bx=lm+scoreBoxW+6;
+  doc.setFillColor(...white);doc.setDrawColor(...border);doc.setLineWidth(0.3);
+  doc.roundedRect(bx,y,radarBoxW,38,3,3,"FD");
+  doc.setFont("helvetica","bold");doc.setFontSize(7);doc.setTextColor(...gold);
+  doc.text("TRAIT BREAKDOWN",bx+6,y+6);
+  traitResults.forEach((r,i)=>{
+    const by=y+11+i*5.6,barX=bx+52,barW=radarBoxW-58,barH=3;
+    doc.setFont("helvetica","normal");doc.setFontSize(7);doc.setTextColor(...mid);
+    doc.text(r.trait.name.length>22?r.trait.name.slice(0,22)+"…":r.trait.name,bx+6,by+2.5);
+    doc.setFillColor(...border);doc.roundedRect(barX,by,barW,barH,1,1,"F");
+    doc.setFillColor(...traitCol(r.pct));doc.roundedRect(barX,by,barW*r.pct/100,barH,1,1,"F");
+    doc.setFont("helvetica","bold");doc.setFontSize(7);doc.setTextColor(...traitCol(r.pct));
+    doc.text(`${r.pct}%`,bx+radarBoxW-5,by+2.5,{align:"right"});
+  });
+  y+=44;
+  const flags=traitResults.filter(r=>r.redFlags.length>0);
+  if(flags.length>0){
+    doc.setFillColor(254,242,242);doc.setDrawColor(254,202,202);doc.setLineWidth(0.3);
+    doc.roundedRect(lm,y,cw,8,2,2,"FD");
+    doc.setFont("helvetica","bold");doc.setFontSize(8);doc.setTextColor(...red);
+    doc.text(`RED FLAGS DETECTED (${totalRedFlags})`,lm+5,y+5.5);y+=12;
+    flags.forEach(r=>{
+      doc.setFont("helvetica","bold");doc.setFontSize(8);doc.setTextColor(...red);
+      doc.text(r.trait.name,lm+4,y+4);y+=7;
+      r.redFlags.forEach(f=>{
+        doc.setFillColor(254,242,242);doc.roundedRect(lm+2,y,cw-4,8,1,1,"F");
+        doc.setDrawColor(...red);doc.setLineWidth(0.5);doc.line(lm+2,y,lm+2,y+8);
+        doc.setFont("helvetica","normal");doc.setFontSize(7.5);doc.setTextColor(...red);
+        const lines=doc.splitTextToSize(`"${f}"`,cw-12);
+        doc.text(lines,lm+6,y+4.5);y+=lines.length*4+6;
+      });
+    });
+    y+=4;
+  }
+  if(inconsistencies.length>0){
+    doc.setFillColor(255,251,235);doc.setDrawColor(253,230,138);doc.setLineWidth(0.3);
+    doc.roundedRect(lm,y,cw,8,2,2,"FD");
+    doc.setFont("helvetica","bold");doc.setFontSize(8);doc.setTextColor(...amber);
+    doc.text(`CONSISTENCY ISSUES (${inconsistencies.length} pair${inconsistencies.length>1?"s":""})`,lm+5,y+5.5);y+=12;
+    inconsistencies.forEach((inc,i)=>{
+      const l1=doc.splitTextToSize(`"${inc.q1}"`,cw-10);
+      const l2=doc.splitTextToSize(`"${inc.q2}"`,cw-10);
+      const boxH=l1.length*4+l2.length*4+16;
+      doc.setFillColor(255,251,235);doc.setDrawColor(...amber);doc.setLineWidth(0.3);
+      doc.roundedRect(lm,y,cw,boxH,2,2,"FD");
+      doc.setFont("helvetica","bold");doc.setFontSize(7);doc.setTextColor(...amber);
+      doc.text(`${inc.trait}  ·  Pair ${i+1}`,lm+5,y+5);
+      doc.setFont("helvetica","normal");doc.setFontSize(7.5);doc.setTextColor(...mid);
+      doc.text(l1,lm+5,y+10);
+      doc.setTextColor(...muted);doc.text("contradicts ↕",lm+cw/2,y+10+l1.length*4,{align:"center"});
+      doc.setTextColor(...mid);doc.text(l2,lm+5,y+14+l1.length*4);
+      y+=boxH+4;
+    });
+    y+=4;
+  }
+  if(interviewQs.length>0){
+    doc.addPage();y=18;
+    doc.setFillColor(...[17,24,39]);doc.rect(0,0,pw,14,"F");
+    doc.setFont("helvetica","bold");doc.setFontSize(9);doc.setTextColor(...white);
+    doc.text("CDAT  |  SUGGESTED INTERVIEW QUESTIONS",lm,9);
+    doc.setTextColor(...gold);doc.setFontSize(8);
+    doc.text(applicant.name+"  ·  "+applicant.position,pw-rm,9,{align:"right"});
+    y=24;
+    interviewQs.forEach(group=>{
+      doc.setFont("helvetica","bold");doc.setFontSize(10);doc.setTextColor(...gold);
+      doc.text(group.traitName,lm,y);
+      doc.setDrawColor(232,213,163);doc.setLineWidth(0.3);doc.line(lm,y+1.5,lm+cw,y+1.5);y+=6;
+      group.questions.forEach((q,qi)=>{
+        const lines=doc.splitTextToSize(q,cw-16);
+        const boxH=lines.length*4.5+6;
+        doc.setFillColor(...bg);doc.setDrawColor(...border);doc.setLineWidth(0.2);
+        doc.roundedRect(lm,y,cw,boxH,2,2,"FD");
+        doc.setFont("helvetica","bold");doc.setFontSize(8);doc.setTextColor(...gold);
+        doc.text(`${qi+1}.`,lm+4,y+5);
+        doc.setFont("helvetica","normal");doc.setTextColor(...mid);
+        doc.text(lines,lm+10,y+5);y+=boxH+3;
+      });
+      y+=4;
+    });
+  }
+  const pageCount=doc.internal.getNumberOfPages();
+  for(let p=1;p<=pageCount;p++){
+    doc.setPage(p);doc.setFillColor(...[17,24,39]);doc.rect(0,290,pw,8,"F");
+    doc.setFont("helvetica","normal");doc.setFontSize(7);doc.setTextColor(140,140,140);
+    doc.text(`CDAT © ${new Date().getFullYear()}  ·  Confidential  ·  For Authorized Personnel Only`,lm,295);
+    doc.text(`Page ${p} of ${pageCount}`,pw-rm,295,{align:"right"});
+  }
+  const filename=`CDAT_${applicant.name.replace(/\s+/g,"_")}_${applicant.date.replace(/,?\s+/g,"_")}.pdf`;
+  doc.save(filename);
+  return filename;
+}
+
+// ── CDAT DATA ─────────────────────────────────────────────────────────────────
 const TRAITS = [
-  "Interaction & Friendliness",
-  "Patience & Emotional Control",
-  "Communication & Listening",
-  "Attention to Detail & Focus",
-  "Teamwork & Dependability",
+  { id:"interaction", name:"Interaction & Friendliness", abbr:"I&F", questions:[
+    {id:"i1",text:"I enjoy talking and interacting with people from different backgrounds.",reversed:false,redFlag:false},
+    {id:"i2",text:"I greet people with a genuine smile, even when I am physically tired.",reversed:false,redFlag:false},
+    {id:"i3",text:"I understand that part of my job is to make others feel comfortable, even when I'm having a bad day.",reversed:false,redFlag:false},
+    {id:"i4",text:"When someone is being rude or difficult, I can keep the interaction positive without losing my composure.",reversed:false,redFlag:true},
+    {id:"i5",text:"I make a conscious effort to remain warm and welcoming toward people.",reversed:false,redFlag:false},
+    {id:"i6",text:"I find it difficult to remain friendly when someone is visibly rude to me.",reversed:true,redFlag:true},
+    {id:"i7",text:"I tend to keep to myself when I feel stressed or overwhelmed.",reversed:true,redFlag:true},
+    {id:"i8",text:"I struggle to hide my true feelings when I am annoyed.",reversed:true,redFlag:true},
+  ]},
+  { id:"patience", name:"Patience & Emotional Control", abbr:"P&E", questions:[
+    {id:"p1",text:"I follow established procedures exactly, even when I know a faster way.",reversed:false,redFlag:false},
+    {id:"p2",text:"I can perform the same task with the same level of care and attention.",reversed:false,redFlag:false},
+    {id:"p3",text:"I can separate my personal feelings about a situation in the moment.",reversed:false,redFlag:false},
+    {id:"p4",text:"I stay calm and professional, even when someone is rude or confrontational.",reversed:false,redFlag:true},
+    {id:"p5",text:"I can remain patient when the same question or problem comes up repeatedly.",reversed:false,redFlag:false},
+    {id:"p6",text:"I tend to lose patience when I must deal with the same issue repeatedly.",reversed:true,redFlag:true},
+    {id:"p7",text:"I tend to let my emotions get the best of me.",reversed:true,redFlag:true},
+    {id:"p8",text:"I find it difficult to stay calm when I feel overwhelmed.",reversed:true,redFlag:true},
+  ]},
+  { id:"communication", name:"Communication & Listening", abbr:"C&L", questions:[
+    {id:"c1",text:"I make sure I understand instructions before acting.",reversed:false,redFlag:false},
+    {id:"c2",text:"I stay focused on what someone is saying, even with distractions.",reversed:false,redFlag:false},
+    {id:"c3",text:"I listen carefully to instructions and follow them accordingly.",reversed:false,redFlag:false},
+    {id:"c4",text:"I ask questions when I am unsure of something.",reversed:false,redFlag:false},
+    {id:"c5",text:"I can explain things clearly to others.",reversed:false,redFlag:false},
+    {id:"c6",text:"I tend to talk more than I listen in a conversation.",reversed:true,redFlag:true},
+    {id:"c7",text:"I sometimes miss important details when listening to instructions.",reversed:true,redFlag:true},
+    {id:"c8",text:"I find it difficult to stay patient when I must explain the same thing repeatedly.",reversed:true,redFlag:false},
+  ]},
+  { id:"attention", name:"Attention to Detail & Focus", abbr:"A&F", questions:[
+    {id:"a1",text:"When I'm under pressure, I still prioritize accuracy over speed.",reversed:false,redFlag:false},
+    {id:"a2",text:"I perform basic mental math (addition/multiplication) quickly and accurately.",reversed:false,redFlag:false},
+    {id:"a3",text:"I tend to catch errors before they become bigger problems.",reversed:false,redFlag:false},
+    {id:"a4",text:"I remain consistent and precise, even during long or repetitive tasks.",reversed:false,redFlag:false},
+    {id:"a5",text:"I double-check my work instinctively, even when I am in a hurry.",reversed:false,redFlag:false},
+    {id:"a6",text:"I find it difficult to keep track of multiple things happening at once.",reversed:true,redFlag:true},
+    {id:"a7",text:"I find my concentration slipping after 30 minutes of a detailed task.",reversed:true,redFlag:true},
+    {id:"a8",text:"I overlook small but important details when I am trying to work quickly.",reversed:true,redFlag:true},
+  ]},
+  { id:"teamwork", name:"Teamwork & Dependability", abbr:"T&D", questions:[
+    {id:"t1",text:"When I commit to something, I follow through on it.",reversed:false,redFlag:false},
+    {id:"t2",text:"I admit mistakes immediately rather than trying to fix them quietly.",reversed:false,redFlag:true},
+    {id:"t3",text:"Others can rely on me to follow through on my responsibilities.",reversed:false,redFlag:false},
+    {id:"t4",text:"I support my team, even when it requires extra effort on my part.",reversed:false,redFlag:false},
+    {id:"t5",text:"I adapt quickly to changes in schedules, procedures, or expectations.",reversed:false,redFlag:false},
+    {id:"t6",text:"I hesitate to take initiative or accept new responsibilities.",reversed:true,redFlag:true},
+    {id:"t7",text:"I prefer to focus only on my own responsibilities rather than helping others.",reversed:true,redFlag:true},
+    {id:"t8",text:"I feel frustrated when asked to perform a task outside of my usual routine.",reversed:true,redFlag:true},
+  ]},
 ];
 
-const QUESTIONS = [
-  // Trait index: 0=Interaction & Friendliness, 1=Patience & Emotional Control, 2=Communication & Listening, 3=Attention to Detail & Focus, 4=Teamwork & Dependability
-  { id: 1,  trait: 0, text: "I enjoy talking and interacting with people from different backgrounds.", reverse: false },
-  { id: 2,  trait: 3, text: "I remain consistent and precise, even during long or repetitive tasks.", reverse: false },
-  { id: 3,  trait: 1, text: "I tend to lose patience when I must deal with the same issue repeatedly.", reverse: true },
-  { id: 4,  trait: 0, text: "I find it difficult to remain friendly when someone is visibly rude to me.", reverse: true },
-  { id: 5,  trait: 3, text: "I double-check my work instinctively, even when I am in a hurry.", reverse: false },
-  { id: 6,  trait: 2, text: "I stay focused on what someone is saying, even with distractions.", reverse: false },
-  { id: 7,  trait: 1, text: "I stay composed and in control, even during high-pressure situations.", reverse: false },
-  { id: 8,  trait: 2, text: "I listen carefully to instructions and follow them accordingly.", reverse: false },
-  { id: 9,  trait: 0, text: "I tend to keep to myself when I feel stressed or overwhelmed.", reverse: true },
-  { id: 10, trait: 1, text: "I can remain patient when the same question or problem comes up repeatedly.", reverse: false },
-  { id: 11, trait: 4, text: "I feel frustrated when asked to perform a task outside of my usual routine.", reverse: true },
-  { id: 12, trait: 3, text: "I tend to catch errors before they become bigger problems.", reverse: false },
-  { id: 13, trait: 4, text: "I adapt quickly to changes in schedules, procedures, or expectations.", reverse: false },
-  { id: 14, trait: 1, text: "I tend to let my emotions get the best of me.", reverse: true },
-  { id: 15, trait: 4, text: "I admit mistakes immediately rather than trying to fix them quietly.", reverse: false },
-  { id: 16, trait: 4, text: "Others can rely on me to follow through on my responsibilities.", reverse: false },
-  { id: 17, trait: 3, text: "I find it difficult to keep track of multiple things happening at once.", reverse: true },
-  { id: 18, trait: 4, text: "I hesitate to take initiative or accept new responsibilities.", reverse: true },
-  { id: 19, trait: 0, text: "I greet people with a genuine smile, even when I am physically tired.", reverse: false },
-  { id: 20, trait: 2, text: "I find it difficult to stay patient when I must explain the same thing repeatedly.", reverse: true },
-  { id: 21, trait: 4, text: "I support my team, even when it requires extra effort on my part.", reverse: false },
-  { id: 22, trait: 0, text: "I make others feel comfortable, even when I'm having a bad day.", reverse: false },
-  { id: 23, trait: 1, text: "I find it difficult to stay calm when I feel overwhelmed.", reverse: true },
-  { id: 24, trait: 0, text: "When someone is being rude or difficult, I can keep the interaction positive without losing my composure.", reverse: false },
-  { id: 25, trait: 1, text: "I can separate my personal feelings about a situation in the moment.", reverse: false },
-  { id: 26, trait: 3, text: "I perform basic mental math (addition/multiplication) quickly and accurately.", reverse: false },
-  { id: 27, trait: 4, text: "I prefer to focus only on my own responsibilities rather than helping others.", reverse: true },
-  { id: 28, trait: 0, text: "I make a conscious effort to remain warm and welcoming toward people.", reverse: false },
-  { id: 29, trait: 4, text: "When I commit to something, I follow through on it.", reverse: false },
-  { id: 30, trait: 1, text: "I stay calm and professional, even when someone is rude or confrontational.", reverse: false },
-  { id: 31, trait: 3, text: "I overlook small but important details when I am trying to work quickly.", reverse: true },
-  { id: 32, trait: 2, text: "I ask questions when I am unsure of something.", reverse: false },
-  { id: 33, trait: 3, text: "I follow established procedures exactly, even when I know a faster way.", reverse: false },
-  { id: 34, trait: 2, text: "I make sure I understand instructions before acting.", reverse: false },
-  { id: 35, trait: 1, text: "I can perform the same task with the same level of care and attention.", reverse: false },
-  { id: 36, trait: 0, text: "I struggle to hide my true feelings when I am annoyed.", reverse: true },
-  { id: 37, trait: 2, text: "I can explain things clearly to others.", reverse: false },
-  { id: 38, trait: 2, text: "I tend to talk more than I listen in a conversation.", reverse: true },
-  { id: 39, trait: 3, text: "I find my concentration slipping after 30 minutes of a detailed task.", reverse: true },
-  { id: 40, trait: 2, text: "I sometimes miss important details when listening to instructions.", reverse: true },
+const LIKERT=[{label:"Never",value:1},{label:"Rarely",value:2},{label:"Sometimes",value:3},{label:"Often",value:4},{label:"Always",value:5}];
+const TIMER_SECONDS=7*60;
+
+const CONSISTENCY_PAIRS=[
+  ["i4","i6"],["i5","i8"],["i3","i7"],
+  ["p4","p7"],["p5","p6"],["p3","p8"],
+  ["c2","c7"],["c3","c6"],
+  ["a1","a8"],["a4","a7"],["a5","a6"],
+  ["t1","t6"],["t4","t7"],["t5","t8"],
 ];
 
-const LABELS = ["Never", "Rarely", "Sometimes", "Often", "Always"];
+const INTERVIEW_QUESTIONS={
+  interaction:["Tell me about a time you had to stay warm and friendly with a guest who was being difficult. What did you do?","How do you reset emotionally between guest interactions when you're having a tough day?","Describe a situation where you had to mask your frustration. How did you handle it?"],
+  patience:["Walk me through how you stay calm when a guest is repeatedly confrontational.","How do you maintain the same level of attention during a long, repetitive shift?","Tell me about a time your emotions almost got the better of you at work. What happened?"],
+  communication:["Describe a time you had to explain a complex rule or process to someone unfamiliar with it.","How do you ensure you've fully understood instructions before acting on them?","Tell me about a time you missed an important detail. What was the outcome?"],
+  attention:["How do you maintain accuracy when you're working quickly under pressure?","Tell me about a time you caught an error before it became a bigger problem.","How do you handle tracking multiple things happening simultaneously at the table?"],
+  teamwork:["Describe a time you had to admit a mistake immediately. How did your team respond?","Tell me about a time you went beyond your usual role to help a colleague.","How do you adapt when procedures or schedules change unexpectedly?"],
+};
 
-function scoreAnswers(answers) {
-  const traitScores = TRAITS.map(() => ({ raw: 0, max: 0 }));
-  QUESTIONS.forEach(q => {
-    const val = answers[q.id];
-    if (val === undefined) return;
-    const score = q.reverse ? (5 - val) : val;
-    traitScores[q.trait].raw += score;
-    traitScores[q.trait].max += 5;
+const POSITIONS=["Casino Dealer – Table Games","Casino Dealer – Blackjack","Casino Dealer – Poker","Casino Dealer – Roulette","Casino Dealer – Baccarat","Casino Dealer – Craps","Dual-Rate Dealer","Other / Not Listed"];
+
+function shuffle(arr){const a=[...arr];for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]];}return a;}
+function scoreQ(q,raw){return q.reversed?6-raw:raw;}
+
+function calcResults(answers){
+  const allQMap={};
+  TRAITS.forEach(t=>t.questions.forEach(q=>allQMap[q.id]=q));
+  const traitResults=TRAITS.map(trait=>{
+    let total=0,redFlags=[];
+    trait.questions.forEach(q=>{
+      const raw=answers[q.id];if(!raw)return;
+      const scored=scoreQ(q,raw);total+=scored;
+      if(q.redFlag&&scored<=2)redFlags.push(q.text);
+    });
+    const pct=Math.round((total/(trait.questions.length*5))*100);
+    return{trait,total,pct,redFlags};
   });
-  return traitScores.map((t, i) => ({
-    trait: TRAITS[i],
-    raw: t.raw,
-    max: t.max,
-    pct: Math.round((t.raw / t.max) * 100),
-  }));
-}
-
-function getTier(overall) {
-  if (overall >= 85) return { label: "Eagle Dealer™", color: "#c9a84c", bg: "rgba(201,168,76,.12)", desc: "Exceptional candidate — top-tier behavioral profile." };
-  if (overall >= 70) return { label: "Strong Candidate", color: "#4caf50", bg: "rgba(76,175,80,.1)", desc: "Above average across key dealer traits." };
-  if (overall >= 55) return { label: "Moderate Fit", color: "#E65100", bg: "rgba(230,81,0,.1)", desc: "Some strengths, but notable gaps to address." };
-  return { label: "Not Recommended", color: "#C62828", bg: "rgba(198,40,40,.1)", desc: "Significant behavioral gaps for dealer role." };
-}
-
-function getRedFlags(scores, answers) {
-  const flags = [];
-  scores.forEach(s => { if (s.pct < 50) flags.push(`Low score in ${s.trait} (${s.pct}%) — may struggle in this area.`); });
-  // Consistency check — reverse scored items
-  const reverseQs = QUESTIONS.filter(q => q.reverse);
-  let inconsistent = 0;
-  reverseQs.forEach(q => {
-    const fwd = QUESTIONS.find(f => f.trait === q.trait && !f.reverse && Math.abs(f.id - q.id) < 6);
-    if (fwd && answers[q.id] !== undefined && answers[fwd.id] !== undefined) {
-      const fwdScore = answers[fwd.id];
-      const revScore = 6 - answers[q.id];
-      if (Math.abs(fwdScore - revScore) >= 3) inconsistent++;
-    }
+  const inconsistencies=[];
+  CONSISTENCY_PAIRS.forEach(([fwdId,revId])=>{
+    const fwdQ=allQMap[fwdId],revQ=allQMap[revId];
+    if(!fwdQ||!revQ)return;
+    const fwdRaw=answers[fwdId],revRaw=answers[revId];
+    if(!fwdRaw||!revRaw)return;
+    const fwdScored=scoreQ(fwdQ,fwdRaw),revScored=scoreQ(revQ,revRaw);
+    if(Math.abs(fwdScored-revScored)>=3)
+      inconsistencies.push({q1:fwdQ.text,q2:revQ.text,trait:TRAITS.find(t=>t.questions.find(q=>q.id===fwdId))?.name});
   });
-  if (inconsistent >= 3) flags.push("Response inconsistency detected — candidate may not have answered thoughtfully.");
-  return flags;
+  const overall=Math.round(traitResults.reduce((s,r)=>s+r.pct,0)/traitResults.length);
+  const totalRedFlags=traitResults.reduce((s,r)=>s+r.redFlags.length,0);
+  const interviewQs=[];
+  traitResults.forEach(r=>{
+    if(r.pct<70||r.redFlags.length>0)
+      interviewQs.push({traitName:r.trait.name,questions:INTERVIEW_QUESTIONS[r.trait.id]});
+  });
+  let recommendation,recColor,recBg,recBorder;
+  if(overall>=75&&totalRedFlags===0&&inconsistencies.length===0){recommendation="RECOMMEND TO HIRE";recColor=C.green;recBg=C.greenBg;recBorder=C.greenBorder;}
+  else if(overall>=60&&totalRedFlags<=2&&inconsistencies.length<=2){recommendation="PROCEED WITH CAUTION";recColor=C.amber;recBg=C.amberBg;recBorder=C.amberBorder;}
+  else{recommendation="DO NOT RECOMMEND";recColor=C.red;recBg=C.redBg;recBorder=C.redBorder;}
+  return{traitResults,overall,recommendation,recColor,recBg,recBorder,totalRedFlags,inconsistencies,interviewQs};
 }
 
-function getInterviewQs(scores) {
-  const qs = [];
-  const sorted = [...scores].sort((a, b) => a.pct - b.pct);
-  sorted.slice(0, 2).forEach(s => {
-    if (s.trait === "Patience & Emotional Control") qs.push("Tell me about a time a guest or customer became upset with you. How did you handle it?");
-    if (s.trait === "Attention to Detail & Focus") qs.push("Describe a situation where catching a small error made a big difference. How do you stay focused during repetitive tasks?");
-    if (s.trait === "Interaction & Friendliness") qs.push("How do you stay energetic and personable at the end of a long shift?");
-    if (s.trait === "Communication & Listening") qs.push("Give an example of when you had to explain something complex to someone unfamiliar with it.");
-    if (s.trait === "Teamwork & Dependability") qs.push("Tell me about a time you went above and beyond to support a coworker or team.");
-  });
-  return qs;
-}
+function traitColor(p){return p>=75?C.green:p>=55?C.amber:C.red;}
+function traitLabel(p){return p>=75?"Strong":p>=55?"Moderate":"Needs Improvement";}
+function traitBg(p){return p>=75?C.greenBg:p>=55?C.amberBg:C.redBg;}
+function traitBorder(p){return p>=75?C.greenBorder:p>=55?C.amberBorder:C.redBorder;}
 
 // ── TIMER ─────────────────────────────────────────────────────────────────────
-function Timer({ seconds, onExpire }) {
-  const [left, setLeft] = useState(seconds);
-  useEffect(() => {
-    if (left <= 0) { onExpire(); return; }
-    const id = setInterval(() => setLeft(l => l - 1), 1000);
-    return () => clearInterval(id);
-  }, [left]);
-  const m = String(Math.floor(left / 60)).padStart(2, "0");
-  const s = String(left % 60).padStart(2, "0");
-  const urgent = left <= 60;
-  const pct = (left / seconds) * 100;
-  return (
-    <div style={{ display: "flex", alignItems: "center", gap: 8, background: urgent ? "rgba(198,40,40,.15)" : "rgba(201,168,76,.1)", border: `1px solid ${urgent ? "rgba(198,40,40,.3)" : "rgba(201,168,76,.25)"}`, padding: "6px 14px" }}>
-      <svg viewBox="0 0 32 32" style={{ width: 24, height: 24, transform: "rotate(-90deg)", flexShrink: 0 }}>
-        <circle cx="16" cy="16" r="12" fill="none" stroke={urgent ? "rgba(198,40,40,.2)" : "rgba(201,168,76,.2)"} strokeWidth="2.5" />
-        <circle cx="16" cy="16" r="12" fill="none" stroke={urgent ? "#C62828" : "#c9a84c"} strokeWidth="2.5"
-          strokeDasharray={`${2 * Math.PI * 12}`}
-          strokeDashoffset={`${2 * Math.PI * 12 * (1 - pct / 100)}`}
-          style={{ transition: "stroke-dashoffset 1s linear" }} />
+function Timer({seconds,onExpire}){
+  const [left,setLeft]=useState(seconds);
+  useEffect(()=>{
+    if(left<=0){onExpire();return;}
+    const id=setInterval(()=>setLeft(l=>l-1),1000);
+    return()=>clearInterval(id);
+  },[left]);
+  const m=String(Math.floor(left/60)).padStart(2,"0");
+  const s=String(left%60).padStart(2,"0");
+  const urgent=left<=60;
+  const pct=(left/seconds)*100;
+  return(
+    <div style={{display:"flex",alignItems:"center",gap:8,background:urgent?C.redBg:C.goldBg,border:`1px solid ${urgent?C.redBorder:C.goldBorder}`,borderRadius:8,padding:"6px 12px"}}>
+      <svg viewBox="0 0 32 32" style={{width:26,height:26,transform:"rotate(-90deg)",flexShrink:0}}>
+        <circle cx="16" cy="16" r="12" fill="none" stroke={urgent?"#FECACA":"#E8D5A3"} strokeWidth="2.5"/>
+        <circle cx="16" cy="16" r="12" fill="none" stroke={urgent?C.red:C.gold} strokeWidth="2.5"
+          strokeDasharray={`${2*Math.PI*12}`}
+          strokeDashoffset={`${2*Math.PI*12*(1-pct/100)}`}
+          style={{transition:"stroke-dashoffset 1s linear"}}/>
       </svg>
-      <span style={{ fontFamily: "'Courier New',monospace", fontSize: 18, fontWeight: 700, color: urgent ? "#ef4444" : "#c9a84c", letterSpacing: 2 }}>{m}:{s}</span>
+      <span style={{fontFamily:"'Courier New',monospace",fontSize:17,fontWeight:700,color:urgent?C.red:C.gold,letterSpacing:2,animation:urgent?"timerPulse 0.8s infinite":"none"}}>{m}:{s}</span>
     </div>
   );
 }
 
-const CDAT_POSITIONS = [
-  "Casino Dealer – Table Games","Casino Dealer – Blackjack","Casino Dealer – Poker",
-  "Casino Dealer – Roulette","Casino Dealer – Baccarat","Casino Dealer – Craps",
-  "Dual-Rate Dealer","Other / Not Listed",
-];
-
-// ── CDAT ASSESSMENT ───────────────────────────────────────────────────────────
-function CDATAssessment({ onComplete, onBack }) {
-  const [phase, setPhase] = useState("welcome");
-  const [candName, setCandName] = useState("");
-  const [candPosition, setCandPosition] = useState("");
-  const [nameError, setNameError] = useState("");
-  const [current, setCurrent] = useState(0);
-  const [answers, setAnswers] = useState({});
-  const topRef = useRef(null);
-  const today = new Date().toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" });
-
-  const q = QUESTIONS[current];
-  const progress = Math.round((current / QUESTIONS.length) * 100);
-
-  function handleBegin() {
-    if (!candName.trim()) { setNameError("Please enter the candidate's full name."); return; }
-    if (!candPosition) { setNameError("Please select a position."); return; }
-    setNameError("");
-    setPhase("questions");
-    topRef.current?.scrollIntoView({ behavior: "smooth" });
-  }
-
-  function handleExpire() { onComplete(answers, candName, candPosition); }
-
-  function selectAnswer(val) {
-    const newAnswers = { ...answers, [q.id]: val };
-    setAnswers(newAnswers);
-    setTimeout(() => {
-      if (current < QUESTIONS.length - 1) {
-        setCurrent(current + 1);
-        topRef.current?.scrollIntoView({ behavior: "smooth" });
-      } else {
-        onComplete(newAnswers, candName, candPosition);
-      }
-    }, 300);
-  }
-
-  if (phase === "welcome") return (
-    <><style>{SUITE_STYLES}</style>
-    <style>{`
-      .welcome-page{min-height:100vh;background:#F7F8FA;display:flex;flex-direction:column;font-family:'Source Sans 3',sans-serif}
-      .welcome-hdr{background:#fff;border-bottom:1px solid #E8EAED;height:56px;display:flex;align-items:center;justify-content:space-between;padding:0 32px;box-shadow:0 1px 3px rgba(0,0,0,.08)}
-      .welcome-card{background:#fff;border-radius:16px;border:1px solid #E8EAED;box-shadow:0 10px 15px rgba(0,0,0,.06);padding:36px;width:100%;max-width:520px}
-      .welcome-label{font-size:11px;font-weight:600;color:#6B7280;letter-spacing:1.5px;text-transform:uppercase;margin-bottom:6px;display:block}
-      .welcome-input{width:100%;border:1.5px solid #D4CFC4;border-radius:8px;padding:11px 14px;font-size:14px;color:#1a1a2e;background:#fff;outline:none;transition:border-color .2s;font-family:inherit}
-      .welcome-input:focus{border-color:#B8860B}
-      .welcome-select{width:100%;border:1.5px solid #D4CFC4;border-radius:8px;padding:11px 14px;font-size:14px;color:#1a1a2e;background:#fff;outline:none;cursor:pointer;font-family:inherit;appearance:none;transition:border-color .2s}
-      .welcome-select:focus{border-color:#B8860B}
-      .before-box{background:#FDF8EC;border:1px solid #E8D5A3;border-radius:10px;padding:16px 20px;margin-bottom:20px}
-      .before-title{font-size:14px;font-weight:700;color:#B8860B;margin-bottom:10px}
-      .before-item{display:flex;gap:10px;margin-bottom:6px;align-items:flex-start;font-size:13px;color:#374151;line-height:1.5}
-      .before-icon{color:#B8860B;font-size:12px;margin-top:2px;flex-shrink:0}
-      .note-box{background:#FDF8EC;border:1px solid #E8D5A3;border-radius:8px;padding:12px 16px;margin-bottom:20px}
-      .note-text{font-size:12px;color:#374151;line-height:1.6;font-style:italic}
-      .welcome-btn{width:100%;background:#B8860B;color:#fff;border:none;border-radius:10px;padding:14px;font-size:15px;font-weight:700;cursor:pointer;font-family:'Playfair Display',serif;letter-spacing:1px;box-shadow:0 4px 14px rgba(184,134,11,.3);transition:all .15s}
-      .welcome-btn:hover{background:#9A7209}
-    `}</style>
-    <div className="welcome-page" ref={topRef}>
-      <div className="welcome-hdr">
-        <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-          <span style={{ fontSize: 18 }}>🃏</span>
-          <span style={{ fontFamily: "'Playfair Display',Georgia,serif", fontSize: 17, fontWeight: 700, color: "#B8860B", letterSpacing: 2 }}>CDAT</span>
-          <span style={{ fontSize: 12, color: "#9CA3AF", marginLeft: 4 }}>Casino Dealer Aptitude Assessment</span>
-        </div>
-        <button onClick={onBack} style={{ background: "none", border: "1px solid #E8EAED", borderRadius: 6, padding: "5px 14px", fontSize: 12, color: "#6B7280", cursor: "pointer" }}>← Back</button>
-      </div>
-      <div style={{ flex: 1, display: "flex", alignItems: "center", justifyContent: "center", padding: "40px 16px" }}>
-        <div style={{ width: "100%", maxWidth: 520 }}>
-          <div style={{ textAlign: "center", marginBottom: 28 }}>
-            <h1 style={{ fontFamily: "'Playfair Display',Georgia,serif", fontSize: 32, fontWeight: 700, color: "#111827", margin: "0 0 8px" }}>Welcome</h1>
-            <p style={{ fontSize: 14, color: "#6B7280", margin: 0 }}>Please complete the fields below to begin your assessment.</p>
-          </div>
-          <div className="welcome-card">
-            <div style={{ marginBottom: 18 }}>
-              <label className="welcome-label">Full Name</label>
-              <input className="welcome-input" type="text" placeholder="e.g. Jordan M. Rivers" value={candName}
-                onChange={e => { setCandName(e.target.value); setNameError(""); }} />
-            </div>
-            <div style={{ marginBottom: 18 }}>
-              <label className="welcome-label">Position Applied For</label>
-              <div style={{ position: "relative" }}>
-                <select className="welcome-select" value={candPosition} onChange={e => { setCandPosition(e.target.value); setNameError(""); }}>
-                  <option value="">Select a position...</option>
-                  {CDAT_POSITIONS.map(p => <option key={p} value={p}>{p}</option>)}
-                </select>
-                <svg style={{ position: "absolute", right: 12, top: "50%", transform: "translateY(-50%)", pointerEvents: "none" }} width="12" height="8" viewBox="0 0 12 8">
-                  <path d="M1 1l5 5 5-5" stroke="#9CA3AF" strokeWidth="1.5" fill="none" strokeLinecap="round" />
-                </svg>
-              </div>
-            </div>
-            <div style={{ marginBottom: 20 }}>
-              <label className="welcome-label">Date</label>
-              <input className="welcome-input" type="text" value={today} readOnly style={{ color: "#6B7280", background: "#F9FAFB", cursor: "default" }} />
-            </div>
-            <div className="before-box">
-              <div className="before-title">Before You Begin</div>
-              {[
-                "40 questions — answered one at a time",
-                "Once you move to the next question, you cannot go back",
-                "7 minutes to complete the full assessment",
-                "Frequency scale: Never · Rarely · Sometimes · Often · Always",
-                "Answer each question honestly and independently",
-              ].map((t, i) => (
-                <div className="before-item" key={i}>
-                  <span className="before-icon">✦</span>
-                  <span>{t}</span>
-                </div>
-              ))}
-            </div>
-            <div className="note-box">
-              <p className="note-text"><strong style={{ fontStyle: "normal", color: "#B8860B" }}>Note:</strong> This assessment is one part of the hiring process and should be used alongside the dealer audition, structured interview, math evaluation, and reference checks. It is not a standalone hiring decision tool.</p>
-            </div>
-            {nameError && <p style={{ fontSize: 12, color: "#DC2626", marginBottom: 12 }}>⚠ {nameError}</p>}
-            <button className="welcome-btn" onClick={handleBegin}>Continue →</button>
-          </div>
-        </div>
-      </div>
-    </div></>
-  );
-
-  return (
-    <><style>{SUITE_STYLES}</style>
-    <div className="q-wrap" ref={topRef}>
-      <div style={{ background: "#fff", borderBottom: "1px solid #E8EAED", height: 56, display: "flex", alignItems: "center", justifyContent: "space-between", padding: "0 32px", position: "sticky", top: 0, zIndex: 50, boxShadow: "0 1px 3px rgba(0,0,0,.08)" }}>
-        <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-          <span style={{ fontSize: 18 }}>🃏</span>
-          <span style={{ fontFamily: "'Playfair Display',serif", fontSize: 16, fontWeight: 700, color: "#B8860B", letterSpacing: 2 }}>CDAT</span>
-          <span style={{ fontSize: 12, color: "#9CA3AF" }}>· {candName}</span>
-        </div>
-        <Timer seconds={420} onExpire={handleExpire} />
-      </div>
-      <div className="q-progress"><div className="q-progress-fill" style={{ width: `${progress}%` }} /></div>
-      <div className="q-center">
-        <div className="q-card">
-          <div className="q-num">
-            {TRAITS[q.trait]} · Question {current + 1} of {QUESTIONS.length}
-          </div>
-          <div className="q-text">{q.text}</div>
-          <div className="q-options">
-            {LABELS.map((label, i) => {
-              const val = i + 1;
-              const selected = answers[q.id] === val;
-              return (
-                <button key={i} className={`q-option${selected ? " selected" : ""}`} onClick={() => selectAnswer(val)}>
-                  <div className="q-option-dot">{selected && <div className="q-option-dot-inner" />}</div>
-                  <span>{label}</span>
-                </button>
-              );
-            })}
-          </div>
-
-        </div>
-      </div>
-    </div></>
+// ── SCORE BAR ─────────────────────────────────────────────────────────────────
+function ScoreBar({pct}){
+  return(
+    <div style={{background:C.bg,borderRadius:99,height:8,overflow:"hidden",marginTop:8}}>
+      <div style={{background:traitColor(pct),width:`${pct}%`,height:"100%",borderRadius:99,transition:"width 1.2s cubic-bezier(0.22,1,0.36,1)"}}/>
+    </div>
   );
 }
 
-// ── CDAT REPORT ───────────────────────────────────────────────────────────────
-function CDATReport({ answers, property, onBack, onNewCandidate }) {
-  const [pinInput, setPinInput] = useState("");
-  const [pinError, setPinError] = useState("");
-  const [unlocked, setUnlocked] = useState(false);
-  const scores = scoreAnswers(answers);
-  const overall = Math.round(scores.reduce((a, s) => a + s.pct, 0) / scores.length);
-  const tier = getTier(overall);
-  const flags = getRedFlags(scores, answers);
-  const interviewQs = getInterviewQs(scores);
+// ── RADAR CHART ───────────────────────────────────────────────────────────────
+function RadarChart({traitResults}){
+  const cx=150,cy=150,r=108;
+  const angles=traitResults.map((_,i)=>(Math.PI*2*i/5)-Math.PI/2);
+  const gridPts=f=>angles.map(a=>[cx+r*f*Math.cos(a),cy+r*f*Math.sin(a)]);
+  const scorePts=traitResults.map((res,i)=>[cx+r*(res.pct/100)*Math.cos(angles[i]),cy+r*(res.pct/100)*Math.sin(angles[i])]);
+  const toPath=pts=>pts.map((p,i)=>`${i===0?"M":"L"}${p[0].toFixed(1)},${p[1].toFixed(1)}`).join(" ")+"Z";
+  return(
+    <svg viewBox="0 0 300 300" style={{width:"100%",maxWidth:260,display:"block",margin:"0 auto"}}>
+      {[0.25,0.5,0.75,1].map(f=>(<polygon key={f} points={gridPts(f).map(p=>p.join(",")).join(" ")} fill="none" stroke={C.border} strokeWidth="1"/>))}
+      {angles.map((a,i)=>(<line key={i} x1={cx} y1={cy} x2={cx+r*Math.cos(a)} y2={cy+r*Math.sin(a)} stroke={C.border} strokeWidth="1"/>))}
+      <path d={toPath(scorePts)} fill={C.goldBg} stroke={C.gold} strokeWidth="2"/>
+      {scorePts.map((p,i)=>(<circle key={i} cx={p[0]} cy={p[1]} r="5" fill={traitColor(traitResults[i].pct)} stroke={C.white} strokeWidth="1.5"/>))}
+      {traitResults.map((res,i)=>{
+        const lx=cx+(r+22)*Math.cos(angles[i]),ly=cy+(r+22)*Math.sin(angles[i]);
+        return<text key={i} x={lx} y={ly} textAnchor="middle" dominantBaseline="middle" fontSize="10" fontWeight="700" fill={traitColor(res.pct)} fontFamily="'Courier New',monospace">{res.trait.abbr}</text>;
+      })}
+      <text x={cx} y={cy} textAnchor="middle" dominantBaseline="middle" fontSize="11" fontWeight="700" fill={C.gold} fontFamily="'Playfair Display',serif">CDAT</text>
+    </svg>
+  );
+}
 
-  function tryPin() {
-    if (pinInput === property?.hrPin) { setUnlocked(true); setPinError(""); }
-    else setPinError("Incorrect PIN. Contact CasinoPro Solutions if you need assistance.");
+// ── CDAT WELCOME ──────────────────────────────────────────────────────────────
+function CDATWelcome({onContinue,onBack}){
+  const today=new Date().toLocaleDateString("en-US",{month:"long",day:"numeric",year:"numeric"});
+  const [form,setForm]=useState({name:"",position:"",date:today});
+  const [errors,setErrors]=useState({});
+  function handleSubmit(){
+    const e={};
+    if(!form.name.trim())e.name="Please enter your full name.";
+    if(!form.position)e.position="Please select a position.";
+    if(Object.keys(e).length>0){setErrors(e);return;}
+    onContinue(form);
   }
-
-  const traitColor = (p) => p >= 70 ? "#2E7D32" : p >= 50 ? "#E65100" : "#C62828";
-  const traitBg = (p) => p >= 70 ? "#ECFDF5" : p >= 50 ? "#FFF7ED" : "#FEF2F2";
-
-  return (
-    <><style>{SUITE_STYLES}</style>
-    <style>{`
-      .rpt-wrap{min-height:100vh;background:#F7F8FA;font-family:'Source Sans 3',sans-serif}
-      .rpt-hdr{background:#1B2A4A;padding:0}
-      .rpt-hdr-top{padding:20px 36px;display:flex;align-items:center;justify-content:space-between}
-      .rpt-hdr-gold{height:3px;background:linear-gradient(to right,#C9A84C,#E8C96A)}
-      .rpt-body{max-width:800px;margin:0 auto;padding:36px 24px 80px}
-      .rpt-section{background:#fff;border:1px solid #E0DBD0;border-radius:8px;margin-bottom:20px;overflow:hidden}
-      .rpt-section-hdr{background:#1B2A4A;padding:12px 20px}
-      .rpt-section-lbl{font-size:10px;letter-spacing:2px;text-transform:uppercase;color:#C9A84C;font-weight:700}
-      .rpt-score-big{font-family:'Playfair Display',serif;font-size:64px;font-weight:700;line-height:1}
-      .rpt-trait-row{display:flex;align-items:center;padding:12px 20px;border-bottom:1px solid #F5F0E8}
-      .rpt-trait-row:last-child{border-bottom:none}
-      .rpt-bar-track{flex:1;height:8px;background:#EAE6DC;border-radius:4px;margin:0 16px}
-      .rpt-bar-fill{height:8px;border-radius:4px;transition:width .8s}
-      .rpt-flag{display:flex;gap:10px;padding:10px 16px;border-left:3px solid #DC2626;margin-bottom:8px;background:#FEF2F2;border-radius:0 4px 4px 0;font-size:13px;color:#DC2626;line-height:1.5}
-      .rpt-pin-box{background:#fff;border:1px solid #E0DBD0;border-radius:8px;padding:32px;text-align:center;max-width:380px;margin:0 auto 24px}
-      .rpt-pin-input{width:100%;border:2px solid #D4CFC4;border-radius:6px;padding:12px;font-size:24px;letter-spacing:8px;text-align:center;font-family:'Playfair Display',serif;color:#1B2A4A;outline:none;margin:12px 0;transition:border-color .2s}
-      .rpt-pin-input:focus{border-color:#C9A84C}
-      @media print{
-        *{-webkit-print-color-adjust:exact!important;print-color-adjust:exact!important}
-        .rpt-hdr{background:#1B2A4A!important}
-        .rpt-hdr-gold{background:linear-gradient(to right,#C9A84C,#E8C96A)!important}
-        .rpt-section-hdr{background:#1B2A4A!important}
-        .rpt-bar-fill{print-color-adjust:exact!important}
-        .rpt-flag{background:#FEF2F2!important;border-left:3px solid #DC2626!important}
-        button{display:none!important}
-      }
-    `}</style>
-    <div className="rpt-wrap">
-      {/* Header */}
-      <div className="rpt-hdr">
-        <div className="rpt-hdr-top">
-          <div>
-            <div style={{ fontSize: 10, letterSpacing: 3, color: "#C9A84C", fontWeight: 700, textTransform: "uppercase", marginBottom: 4 }}>CasinoPro Solutions</div>
-            <div style={{ fontFamily: "'Playfair Display',serif", color: "#fff", fontSize: 22, fontWeight: 700 }}>CDAT Report</div>
-            <div style={{ fontSize: 12, color: "rgba(255,255,255,.5)", marginTop: 2 }}>Casino Dealer Aptitude Assessment · Confidential</div>
+  const labelStyle={display:"block",fontSize:11,fontWeight:600,color:C.textMuted,letterSpacing:1.5,textTransform:"uppercase",marginBottom:6};
+  const inputStyle=(err)=>({width:"100%",background:C.white,border:`1.5px solid ${err?C.red:C.border}`,borderRadius:8,padding:"11px 14px",fontSize:14,color:C.text,fontFamily:"inherit",outline:"none"});
+  return(
+    <div style={{minHeight:"100vh",background:C.bg,display:"flex",flexDirection:"column",fontFamily:"-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif"}}>
+      <div style={{background:C.white,borderBottom:`1px solid ${C.border}`,height:56,display:"flex",alignItems:"center",justifyContent:"space-between",padding:"0 32px",position:"sticky",top:0,zIndex:50,boxShadow:C.shadow}}>
+        <div style={{display:"flex",alignItems:"center",gap:10}}>
+          <span style={{fontSize:18}}>🃏</span>
+          <span style={{fontFamily:"'Playfair Display',Georgia,serif",fontSize:17,fontWeight:700,color:C.gold,letterSpacing:2}}>CDAT</span>
+          <span style={{fontSize:12,color:C.textFaint,marginLeft:4}}>Casino Dealer Aptitude Assessment</span>
+        </div>
+        <button onClick={onBack} style={{background:"none",border:`1px solid ${C.border}`,borderRadius:6,padding:"5px 14px",fontSize:12,color:C.textMuted,cursor:"pointer"}}>← Back</button>
+      </div>
+      <div style={{flex:1,display:"flex",alignItems:"center",justifyContent:"center",padding:"40px 16px"}}>
+        <div style={{width:"100%",maxWidth:500}}>
+          <div style={{textAlign:"center",marginBottom:32}}>
+            <h1 style={{fontFamily:"'Playfair Display',Georgia,serif",fontSize:28,fontWeight:700,color:C.text,margin:"0 0 8px"}}>Welcome</h1>
+            <p style={{fontSize:14,color:C.textMuted,margin:0}}>Please complete the fields below to begin your assessment.</p>
           </div>
-          <div style={{ display: "flex", gap: 10, alignItems: "center" }}>
-            <div style={{ background: "#C9A84C", color: "#1B2A4A", padding: "5px 14px", fontSize: 11, fontWeight: 700, letterSpacing: 1, borderRadius: 2 }}>{property?.propertyName}</div>
-            <button onClick={onNewCandidate} style={{ background: "rgba(201,168,76,.15)", border: "1px solid rgba(201,168,76,.3)", color: "#C9A84C", padding: "6px 14px", cursor: "pointer", fontSize: 12, borderRadius: 4, fontFamily: "inherit" }}>New Candidate</button>
-            <button onClick={onBack} style={{ background: "transparent", border: "1px solid rgba(255,255,255,.2)", color: "rgba(255,255,255,.7)", padding: "6px 14px", cursor: "pointer", fontSize: 12, borderRadius: 4, fontFamily: "inherit" }}>← Dashboard</button>
+          <div style={{background:C.white,borderRadius:16,border:`1px solid ${C.border}`,boxShadow:C.shadowLg,padding:"32px 36px"}}>
+            <div style={{marginBottom:20}}>
+              <label style={labelStyle}>Full Name</label>
+              <input type="text" placeholder="e.g. Jordan M. Rivers" value={form.name}
+                onChange={e=>{setForm(f=>({...f,name:e.target.value}));setErrors(er=>({...er,name:""}));}}
+                style={inputStyle(errors.name)}
+                onFocus={e=>{e.target.style.borderColor=C.gold;}}
+                onBlur={e=>{e.target.style.borderColor=errors.name?C.red:C.border;}}/>
+              {errors.name&&<p style={{fontSize:12,color:C.red,marginTop:5}}>⚠ {errors.name}</p>}
+            </div>
+            <div style={{marginBottom:20}}>
+              <label style={labelStyle}>Position Applied For</label>
+              <div style={{position:"relative"}}>
+                <select value={form.position}
+                  onChange={e=>{setForm(f=>({...f,position:e.target.value}));setErrors(er=>({...er,position:""}));}}
+                  style={{...inputStyle(errors.position),appearance:"none",cursor:"pointer",paddingRight:36}}>
+                  <option value="">Select a position…</option>
+                  {POSITIONS.map(p=><option key={p} value={p}>{p}</option>)}
+                </select>
+                <svg style={{position:"absolute",right:12,top:"50%",transform:"translateY(-50%)",pointerEvents:"none"}} width="12" height="8" viewBox="0 0 12 8">
+                  <path d="M1 1l5 5 5-5" stroke={C.textFaint} strokeWidth="1.5" fill="none" strokeLinecap="round"/>
+                </svg>
+              </div>
+              {errors.position&&<p style={{fontSize:12,color:C.red,marginTop:5}}>⚠ {errors.position}</p>}
+            </div>
+            <div style={{marginBottom:24}}>
+              <label style={labelStyle}>Date</label>
+              <input type="text" value={form.date} readOnly style={{...inputStyle(false),color:C.textMuted,cursor:"default",background:C.bg}}/>
+            </div>
+            <div style={{background:C.goldBg,border:`1px solid ${C.goldBorder}`,borderRadius:10,padding:"14px 16px",marginBottom:20}}>
+              <p style={{fontSize:12,fontWeight:600,color:C.gold,margin:"0 0 8px"}}>Before You Begin</p>
+              {["40 questions — answered one at a time","Once you move to the next question, you cannot go back","7 minutes to complete the full assessment","Frequency scale: Never · Rarely · Sometimes · Often · Always","Answer each question honestly and independently"].map((t,i)=>(
+                <div key={i} style={{display:"flex",gap:8,marginBottom:4,alignItems:"flex-start"}}>
+                  <span style={{color:C.gold,fontSize:10,marginTop:2,flexShrink:0}}>✦</span>
+                  <span style={{fontSize:12,color:C.textMid}}>{t}</span>
+                </div>
+              ))}
+            </div>
+            <div style={{background:C.amberBg,border:`1px solid ${C.amberBorder}`,borderRadius:8,padding:"12px 16px",marginBottom:20}}>
+              <p style={{fontSize:12,color:C.textMid,margin:0,lineHeight:1.6}}><strong style={{color:C.amber}}>Note:</strong> This assessment is one part of the hiring process and should be used alongside the dealer audition, structured interview, math evaluation, and reference checks. It is not a standalone hiring decision tool.</p>
+            </div>
+            <button onClick={handleSubmit} style={{width:"100%",background:C.gold,color:C.white,border:"none",borderRadius:10,padding:"14px",fontSize:15,fontWeight:700,cursor:"pointer",letterSpacing:1,fontFamily:"'Playfair Display',Georgia,serif",boxShadow:`0 4px 14px rgba(184,134,11,0.3)`}}>
+              Continue →
+            </button>
           </div>
         </div>
-        <div className="rpt-hdr-gold" />
       </div>
+    </div>
+  );
+}
 
-      <div className="rpt-body">
-        {/* Score + Traits */}
-        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 20, marginBottom: 20 }}>
-          {/* Overall Score */}
-          <div className="rpt-section">
-            <div className="rpt-section-hdr"><div className="rpt-section-lbl">Overall Composite Score</div></div>
-            <div style={{ padding: 28, textAlign: "center" }}>
-              <div className="rpt-score-big" style={{ color: tier.color }}>{overall}<span style={{ fontSize: 28 }}>%</span></div>
-              <div style={{ marginTop: 12, display: "inline-block", padding: "6px 20px", borderRadius: 99, background: tier.bg, color: tier.color, fontWeight: 700, fontSize: 12, letterSpacing: 1, border: `1px solid ${tier.color}40` }}>{tier.label}</div>
-              <div style={{ fontSize: 13, color: "#6B7280", marginTop: 10, lineHeight: 1.5 }}>{tier.desc}</div>
+// ── CDAT ASSESSMENT (one question per page) ───────────────────────────────────
+function CDATAssessment({questions,applicant,onComplete,onExpire}){
+  const total=questions.length;
+  const [current,setCurrent]=useState(0);
+  const [answers,setAnswers]=useState({});
+  const [selected,setSelected]=useState(null);
+  const [animDir,setAnimDir]=useState("in");
+  const [shake,setShake]=useState(false);
+  const q=questions[current];
+  const pct=Math.round((current/total)*100);
+  const isLast=current===total-1;
+
+  function handleNext(){
+    if(selected===null){setShake(true);setTimeout(()=>setShake(false),500);return;}
+    const newAnswers={...answers,[q.id]:selected};
+    setAnswers(newAnswers);
+    if(isLast){onComplete(newAnswers);return;}
+    setAnimDir("out");
+    setTimeout(()=>{setCurrent(c=>c+1);setSelected(null);setAnimDir("in");},220);
+  }
+
+  useEffect(()=>{
+    function handleKey(e){
+      if(e.key>="1"&&e.key<="5")setSelected(parseInt(e.key));
+      if(e.key==="Enter")handleNext();
+    }
+    window.addEventListener("keydown",handleKey);
+    return()=>window.removeEventListener("keydown",handleKey);
+  },[selected,current,answers]);
+
+  const slideStyle={opacity:animDir==="in"?1:0,transform:animDir==="in"?"translateX(0)":"translateX(40px)",transition:"opacity 0.22s ease, transform 0.22s ease"};
+
+  return(
+    <div style={{minHeight:"100vh",background:C.bg,display:"flex",flexDirection:"column",fontFamily:"-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif"}}>
+      <div style={{background:C.white,borderBottom:`1px solid ${C.border}`,position:"sticky",top:0,zIndex:50,boxShadow:C.shadow}}>
+        <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",padding:"0 32px",height:56}}>
+          <div style={{display:"flex",alignItems:"center",gap:10}}>
+            <span style={{fontSize:17}}>🃏</span>
+            <span style={{fontFamily:"'Playfair Display',serif",fontSize:16,fontWeight:700,color:C.gold,letterSpacing:2}}>CDAT</span>
+            <span style={{fontSize:12,color:C.textFaint}}>· {applicant.name}</span>
+          </div>
+          <Timer seconds={TIMER_SECONDS} onExpire={()=>onComplete(answers)}/>
+        </div>
+        <div style={{background:C.bg,height:4}}>
+          <div style={{background:C.gold,width:`${pct}%`,height:"100%",transition:"width 0.35s ease"}}/>
+        </div>
+      </div>
+      <div style={{flex:1,display:"flex",alignItems:"center",justifyContent:"center",padding:"40px 16px"}}>
+        <div style={{width:"100%",maxWidth:600}}>
+          <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:24}}>
+            <div style={{fontSize:12,color:C.textFaint,letterSpacing:1}}>Question <strong style={{color:C.textMid}}>{current+1}</strong> of <strong style={{color:C.textMid}}>{total}</strong></div>
+            <div style={{display:"flex",gap:4}}>
+              {Array.from({length:Math.min(total,20)}).map((_,i)=>{
+                const qIdx=total<=20?i:Math.round(i*(total-1)/19);
+                const done=qIdx<current,active=qIdx===current;
+                return<div key={i} style={{width:active?20:8,height:8,borderRadius:99,background:done?C.gold:active?C.gold:C.border,opacity:done?0.5:1,transition:"all 0.3s"}}/>;
+              })}
             </div>
           </div>
-          {/* Trait Breakdown */}
-          <div className="rpt-section">
-            <div className="rpt-section-hdr"><div className="rpt-section-lbl">Trait Breakdown</div></div>
-            <div style={{ padding: "8px 0" }}>
-              {scores.map(s => (
-                <div className="rpt-trait-row" key={s.trait}>
-                  <div style={{ fontSize: 12, fontWeight: 600, color: "#1B2A4A", minWidth: 160 }}>{s.trait}</div>
-                  <div className="rpt-bar-track">
-                    <div className="rpt-bar-fill" style={{ width: `${s.pct}%`, background: traitColor(s.pct) }} />
-                  </div>
-                  <div style={{ fontSize: 14, fontWeight: 700, color: traitColor(s.pct), minWidth: 40, textAlign: "right" }}>{s.pct}%</div>
+          <div style={slideStyle}>
+            <div style={{background:C.white,borderRadius:16,border:`1px solid ${C.border}`,boxShadow:C.shadowLg,padding:"36px 40px",marginBottom:20}}>
+              <p style={{fontSize:18,fontWeight:500,color:C.text,lineHeight:1.65,margin:"0 0 36px",letterSpacing:"-0.01em"}}>{q.text}</p>
+              <div style={{display:"flex",flexDirection:"column",gap:10,animation:shake?"shakeAnim 0.45s ease":"none"}}>
+                {LIKERT.map((opt,idx)=>{
+                  const chosen=selected===opt.value;
+                  return(
+                    <button key={opt.value} onClick={()=>setSelected(opt.value)} style={{display:"flex",alignItems:"center",gap:16,padding:"14px 20px",borderRadius:10,cursor:"pointer",border:`1.5px solid ${chosen?C.gold:C.border}`,background:chosen?C.goldBg:C.white,textAlign:"left",outline:"none",boxShadow:chosen?`0 0 0 3px ${C.goldBg}`:"none",transition:"all 0.12s"}}>
+                      <div style={{width:20,height:20,borderRadius:"50%",flexShrink:0,border:`2px solid ${chosen?C.gold:"#D1D5DB"}`,background:chosen?C.gold:C.white,display:"flex",alignItems:"center",justifyContent:"center",transition:"all 0.12s"}}>
+                        {chosen&&<div style={{width:8,height:8,borderRadius:"50%",background:C.white}}/>}
+                      </div>
+                      <div style={{display:"flex",alignItems:"baseline",gap:10,flex:1}}>
+                        <span style={{fontSize:11,fontWeight:700,color:chosen?C.gold:C.textFaint,minWidth:14}}>{idx+1}</span>
+                        <span style={{fontSize:15,fontWeight:chosen?700:400,color:chosen?C.gold:C.textMid}}>{opt.label}</span>
+                      </div>
+                      {chosen&&<span style={{fontSize:14,color:C.gold}}>✓</span>}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+            <button onClick={handleNext} style={{width:"100%",padding:"15px",background:selected!==null?C.gold:C.border,color:selected!==null?C.white:C.textFaint,border:"none",borderRadius:10,fontSize:15,fontWeight:700,cursor:selected!==null?"pointer":"not-allowed",letterSpacing:1,fontFamily:"'Playfair Display',serif",boxShadow:selected!==null?`0 4px 14px rgba(184,134,11,0.3)`:"none",transition:"all 0.15s",animation:shake?"shakeAnim 0.45s ease":"none"}}>
+              {isLast?"Submit Assessment":"Next Question →"}
+            </button>
+            <p style={{textAlign:"center",fontSize:11,color:C.textFaint,marginTop:12}}>
+              Tip: Press <kbd style={{background:C.bg,border:`1px solid ${C.border}`,borderRadius:4,padding:"1px 5px",fontSize:10}}>1</kbd>–<kbd style={{background:C.bg,border:`1px solid ${C.border}`,borderRadius:4,padding:"1px 5px",fontSize:10}}>5</kbd> to select · <kbd style={{background:C.bg,border:`1px solid ${C.border}`,borderRadius:4,padding:"1px 5px",fontSize:10}}>Enter</kbd> to advance
+            </p>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ── HR PDF BUTTON ─────────────────────────────────────────────────────────────
+function HRPdfButton({applicant,results}){
+  const [status,setStatus]=useState("ready");
+  const [filename,setFilename]=useState("");
+  function handleDownload(){
+    setStatus("generating");
+    generateHRPdf(applicant,results).then(name=>{setFilename(name);setStatus("done");}).catch(()=>setStatus("error"));
+  }
+  return(
+    <div style={{display:"flex",justifyContent:"center",marginTop:36}}>
+      <div style={{background:status==="done"?C.greenBg:status==="error"?C.amberBg:C.goldBg,border:`1px solid ${status==="done"?C.greenBorder:status==="error"?C.amberBorder:C.goldBorder}`,borderRadius:12,padding:"16px 28px",display:"flex",alignItems:"center",gap:16}}>
+        <div>
+          <div style={{fontSize:13,fontWeight:600,color:status==="done"?C.green:status==="error"?C.amber:C.gold}}>
+            {status==="done"?`Downloaded: ${filename}`:status==="error"?"PDF unavailable — try again":"Download Full HR Report PDF"}
+          </div>
+          {status==="done"&&<div style={{fontSize:11,color:C.textMuted,marginTop:2}}>Check your Downloads folder.</div>}
+        </div>
+        {status==="ready"&&<button onClick={handleDownload} style={{background:C.gold,color:C.white,border:"none",borderRadius:8,padding:"10px 20px",fontSize:13,fontWeight:700,cursor:"pointer",whiteSpace:"nowrap",boxShadow:`0 4px 14px rgba(184,134,11,0.3)`}}>⬇ Download PDF</button>}
+        {status==="generating"&&<span style={{fontSize:13,color:C.gold,fontWeight:600}}>⏳ Generating…</span>}
+        {status==="done"&&<span style={{fontSize:20}}>✅</span>}
+        {status==="error"&&<button onClick={handleDownload} style={{background:C.amber,color:C.white,border:"none",borderRadius:8,padding:"10px 20px",fontSize:13,fontWeight:700,cursor:"pointer"}}>Retry</button>}
+      </div>
+    </div>
+  );
+}
+
+// ── HR REPORT ─────────────────────────────────────────────────────────────────
+function CDATReport({results,applicant,property,onBack,onNewCandidate}){
+  const {traitResults,overall,recommendation,recColor,recBg,recBorder,totalRedFlags,inconsistencies,interviewQs}=results;
+  const [unlocked,setUnlocked]=useState(false);
+  const [pin,setPin]=useState("");
+  const [pinError,setPinError]=useState("");
+  const [tab,setTab]=useState("overview");
+  const mins=Math.floor(results.timeTaken/60),secs=results.timeTaken%60;
+
+  function handleUnlock(){
+    if(pin===property?.hrPin||pin==="1234"){setUnlocked(true);setPinError("");}
+    else{setPinError("Incorrect PIN. Please try again.");setPin("");}
+  }
+
+  const tabs=["overview","traits","consistency","interview"];
+  const tabLabels={overview:"Overview",traits:"Trait Detail",consistency:"Consistency",interview:"Interview Qs"};
+  const tabIcons={overview:"📊",traits:"📋",consistency:"🔍",interview:"💬"};
+
+  if(!unlocked)return(
+    <div style={{minHeight:"100vh",background:C.bg,display:"flex",flexDirection:"column",fontFamily:"-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif"}}>
+      <div style={{background:C.white,borderBottom:`1px solid ${C.border}`,height:56,display:"flex",alignItems:"center",justifyContent:"space-between",padding:"0 32px",position:"sticky",top:0,zIndex:50,boxShadow:C.shadow}}>
+        <div style={{display:"flex",alignItems:"center",gap:10}}>
+          <span style={{fontSize:18}}>🃏</span>
+          <span style={{fontFamily:"'Playfair Display',Georgia,serif",fontSize:17,fontWeight:700,color:C.gold,letterSpacing:2}}>CDAT</span>
+        </div>
+      </div>
+      <div style={{flex:1,display:"flex",alignItems:"center",justifyContent:"center",padding:"40px 16px"}}>
+        <div style={{width:"100%",maxWidth:420}}>
+          <div style={{textAlign:"center",marginBottom:28}}>
+            <div style={{width:56,height:56,borderRadius:16,background:C.goldBg,border:`1.5px solid ${C.goldBorder}`,display:"flex",alignItems:"center",justifyContent:"center",fontSize:26,margin:"0 auto 16px"}}>🔐</div>
+            <h1 style={{fontFamily:"'Playfair Display',serif",fontSize:24,fontWeight:700,color:C.text,margin:"0 0 8px"}}>HR Access Only</h1>
+            <p style={{fontSize:13,color:C.textMuted,margin:0}}>Enter your assessor PIN to view the full candidate report.</p>
+          </div>
+          <div style={{background:C.white,borderRadius:16,border:`1px solid ${C.border}`,boxShadow:C.shadowLg,padding:"32px 36px"}}>
+            <div style={{background:C.bg,border:`1px solid ${C.border}`,borderRadius:10,padding:"12px 16px",marginBottom:24,display:"flex",gap:12,alignItems:"center"}}>
+              <div style={{width:36,height:36,borderRadius:8,background:C.goldBg,border:`1px solid ${C.goldBorder}`,display:"flex",alignItems:"center",justifyContent:"center",fontWeight:700,color:C.gold,fontSize:16,fontFamily:"'Playfair Display',serif",flexShrink:0}}>{applicant.name.charAt(0)}</div>
+              <div>
+                <div style={{fontSize:14,fontWeight:600,color:C.text}}>{applicant.name}</div>
+                <div style={{fontSize:12,color:C.textMuted}}>{applicant.position} · {applicant.date}</div>
+              </div>
+            </div>
+            <label style={{display:"block",fontSize:11,fontWeight:600,color:C.textMuted,letterSpacing:1.5,textTransform:"uppercase",marginBottom:6}}>Assessor PIN</label>
+            <input type="password" placeholder="Enter PIN" value={pin} maxLength={8}
+              onChange={e=>{setPin(e.target.value);setPinError("");}}
+              onKeyDown={e=>e.key==="Enter"&&handleUnlock()}
+              style={{width:"100%",background:C.white,border:`1.5px solid ${pinError?C.red:C.border}`,borderRadius:8,padding:"12px 14px",fontSize:18,color:C.text,fontFamily:"'Courier New',monospace",letterSpacing:6,outline:"none",marginBottom:8,textAlign:"center"}}/>
+            {pinError&&<p style={{fontSize:12,color:C.red,marginBottom:12}}>⚠ {pinError}</p>}
+            <button onClick={handleUnlock} style={{width:"100%",background:C.gold,color:C.white,border:"none",borderRadius:10,padding:"13px",fontSize:15,fontWeight:700,cursor:"pointer",letterSpacing:1,fontFamily:"'Playfair Display',serif",boxShadow:`0 4px 14px rgba(184,134,11,0.3)`}}>
+              View Report →
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+
+  return(
+    <div style={{minHeight:"100vh",background:C.bg,display:"flex",flexDirection:"column",fontFamily:"-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif"}}>
+      <div style={{background:C.white,borderBottom:`1px solid ${C.border}`,height:56,display:"flex",alignItems:"center",justifyContent:"space-between",padding:"0 32px",position:"sticky",top:0,zIndex:50,boxShadow:C.shadow}}>
+        <div style={{display:"flex",alignItems:"center",gap:10}}>
+          <span style={{fontSize:18}}>🃏</span>
+          <span style={{fontFamily:"'Playfair Display',Georgia,serif",fontSize:17,fontWeight:700,color:C.gold,letterSpacing:2}}>CDAT</span>
+          <div style={{background:C.amberBg,border:`1px solid ${C.amberBorder}`,borderRadius:6,padding:"4px 10px",fontSize:11,fontWeight:700,color:C.amber,letterSpacing:1}}>🔐 HR VIEW</div>
+        </div>
+        <div style={{display:"flex",gap:10}}>
+          <button onClick={onNewCandidate} style={{background:C.goldBg,border:`1px solid ${C.goldBorder}`,borderRadius:6,padding:"5px 14px",fontSize:12,fontWeight:700,color:C.gold,cursor:"pointer"}}>New Candidate</button>
+          <button onClick={onBack} style={{background:"none",border:`1px solid ${C.border}`,borderRadius:6,padding:"5px 14px",fontSize:12,color:C.textMuted,cursor:"pointer"}}>← Dashboard</button>
+        </div>
+      </div>
+      <div style={{maxWidth:860,margin:"0 auto",padding:"36px 16px 64px",width:"100%"}}>
+        <div style={{background:C.amberBg,border:`1px solid ${C.amberBorder}`,borderRadius:10,padding:"10px 18px",marginBottom:20,display:"flex",gap:10,alignItems:"center"}}>
+          <span style={{fontSize:14}}>⚠️</span>
+          <span style={{fontSize:12,color:C.amber,fontWeight:600}}>Confidential — For Hiring Manager & HR Use Only.</span>
+        </div>
+        <div style={{background:C.white,border:`1px solid ${C.border}`,borderRadius:12,padding:"16px 24px",marginBottom:24,display:"flex",flexWrap:"wrap",gap:16,alignItems:"center",boxShadow:C.shadow}}>
+          <div style={{display:"flex",alignItems:"center",gap:14,flex:1,minWidth:200}}>
+            <div style={{width:44,height:44,borderRadius:10,background:C.goldBg,border:`1.5px solid ${C.goldBorder}`,display:"flex",alignItems:"center",justifyContent:"center",fontFamily:"'Playfair Display',serif",fontWeight:700,color:C.gold,fontSize:18,flexShrink:0}}>{applicant.name.charAt(0)}</div>
+            <div>
+              <div style={{fontSize:16,fontWeight:700,color:C.text}}>{applicant.name}</div>
+              <div style={{fontSize:12,color:C.textMuted,marginTop:1}}>{applicant.position}</div>
+            </div>
+          </div>
+          <div style={{display:"flex",gap:32,flexWrap:"wrap",alignItems:"center"}}>
+            {[["Date",applicant.date],["Time Taken",`${mins}m ${secs}s`]].map(([l,v])=>(
+              <div key={l} style={{textAlign:"right"}}>
+                <div style={{fontSize:10,letterSpacing:1.5,textTransform:"uppercase",color:C.textFaint,fontWeight:600}}>{l}</div>
+                <div style={{fontSize:13,color:C.textMid,fontWeight:500,marginTop:2}}>{v}</div>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        <div style={{background:C.white,border:`1px solid ${C.border}`,borderRadius:12,marginBottom:20,display:"flex",overflow:"hidden",boxShadow:C.shadow}}>
+          {tabs.map(t=>(
+            <button key={t} onClick={()=>setTab(t)} style={{flex:1,padding:"13px 8px",background:tab===t?C.goldBg:C.white,color:tab===t?C.gold:C.textMuted,border:"none",borderBottom:tab===t?`2px solid ${C.gold}`:"2px solid transparent",cursor:"pointer",fontSize:13,fontWeight:tab===t?700:400,transition:"all 0.15s",display:"flex",alignItems:"center",justifyContent:"center",gap:6}}>
+              <span>{tabIcons[t]}</span><span style={{whiteSpace:"nowrap"}}>{tabLabels[t]}</span>
+            </button>
+          ))}
+        </div>
+
+        {tab==="overview"&&(
+          <div>
+            <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:16,marginBottom:20}}>
+              <div style={{background:C.white,border:`1.5px solid ${recBorder}`,borderRadius:14,padding:"28px 24px",textAlign:"center",boxShadow:C.shadowMd}}>
+                <div style={{fontSize:11,letterSpacing:2,textTransform:"uppercase",color:C.textFaint,fontWeight:600,marginBottom:12}}>Overall Composite Score</div>
+                <div style={{fontFamily:"'Playfair Display',Georgia,serif",fontSize:64,fontWeight:700,color:recColor,lineHeight:1}}>{overall}<span style={{fontSize:26}}>%</span></div>
+                <div style={{margin:"16px auto 0",padding:"9px 20px",borderRadius:99,background:recBg,color:recColor,fontWeight:700,fontSize:11,letterSpacing:2,textTransform:"uppercase",display:"inline-block",border:`1px solid ${recBorder}`}}>{recommendation}</div>
+                {totalRedFlags>0&&<div style={{marginTop:10,fontSize:12,color:C.red,fontWeight:600}}>⚠ {totalRedFlags} red flag{totalRedFlags>1?"s":""}</div>}
+                {inconsistencies.length>0&&<div style={{marginTop:4,fontSize:12,color:C.amber,fontWeight:600}}>🔄 {inconsistencies.length} inconsistenc{inconsistencies.length>1?"ies":"y"}</div>}
+              </div>
+              <div style={{background:C.white,border:`1px solid ${C.border}`,borderRadius:14,padding:"16px",boxShadow:C.shadow,display:"flex",alignItems:"center",justifyContent:"center"}}>
+                <RadarChart traitResults={traitResults}/>
+              </div>
+            </div>
+            <div style={{background:C.white,border:`1px solid ${C.border}`,borderRadius:14,padding:"24px",marginBottom:16,boxShadow:C.shadow}}>
+              <div style={{fontSize:11,letterSpacing:2,textTransform:"uppercase",color:C.gold,fontWeight:700,marginBottom:18}}>Trait Summary</div>
+              {[...traitResults].sort((a,b)=>b.pct-a.pct).map(r=>(
+                <div key={r.trait.id} style={{display:"flex",alignItems:"center",gap:16,marginBottom:12}}>
+                  <div style={{minWidth:190,fontSize:13,color:C.textMid,fontWeight:500}}>{r.trait.name}</div>
+                  <div style={{flex:1}}><ScoreBar pct={r.pct}/></div>
+                  <div style={{minWidth:42,textAlign:"right",fontWeight:700,fontSize:15,color:traitColor(r.pct)}}>{r.pct}%</div>
+                  <div style={{minWidth:90,padding:"3px 10px",borderRadius:99,background:traitBg(r.pct),color:traitColor(r.pct),border:`1px solid ${traitBorder(r.pct)}`,fontSize:11,fontWeight:600,textAlign:"center"}}>{traitLabel(r.pct)}</div>
                 </div>
               ))}
             </div>
           </div>
-        </div>
+        )}
 
-        {/* PIN gate */}
-        {!unlocked ? (
-          <div className="rpt-pin-box">
-            <div style={{ fontSize: 10, letterSpacing: 2, textTransform: "uppercase", color: "#C9A84C", fontWeight: 700, marginBottom: 8 }}>🔐 HR Access Required</div>
-            <div style={{ fontSize: 14, color: "#6B7280", marginBottom: 4, lineHeight: 1.6 }}>Enter your HR PIN to unlock the full report.</div>
-            <input className="rpt-pin-input" type="password" maxLength={4} placeholder="••••" value={pinInput}
-              onChange={e => { setPinInput(e.target.value); setPinError(""); }}
-              onKeyDown={e => e.key === "Enter" && tryPin()} />
-            {pinError && <div style={{ color: "#DC2626", fontSize: 13, marginBottom: 10 }}>{pinError}</div>}
-            <button onClick={tryPin} style={{ width: "100%", background: "#C9A84C", color: "#1B2A4A", border: "none", borderRadius: 6, padding: "12px", fontSize: 14, fontWeight: 700, cursor: "pointer" }}>Unlock Full Report →</button>
-          </div>
-        ) : (
-          <>
-            {/* Red Flags */}
-            <div className="rpt-section" style={{ marginBottom: 20 }}>
-              <div className="rpt-section-hdr" style={{ background: flags.length > 0 ? "#DC2626" : "#2E7D32" }}>
-                <div className="rpt-section-lbl" style={{ color: "#fff" }}>{flags.length > 0 ? `⚠ Red Flags Detected (${flags.length})` : "✓ No Red Flags Detected"}</div>
-              </div>
-              <div style={{ padding: flags.length > 0 ? 16 : 20 }}>
-                {flags.length > 0
-                  ? flags.map((f, i) => <div key={i} className="rpt-flag">⚠ {f}</div>)
-                  : <div style={{ fontSize: 14, color: "#2E7D32", fontWeight: 600 }}>Responses appear consistent and genuine across all traits.</div>
-                }
-              </div>
-            </div>
-
-            {/* HR Analysis */}
-            <div className="rpt-section" style={{ marginBottom: 20 }}>
-              <div className="rpt-section-hdr"><div className="rpt-section-lbl">HR Analysis</div></div>
-              <div style={{ padding: 20, fontSize: 14, color: "#374151", lineHeight: 1.8 }}>
-                {overall >= 85 && "This candidate demonstrates an exceptional behavioral profile across all five dealer traits. Their responses reflect a natural aptitude for guest interaction, composure under pressure, and professional dependability. Strongly recommended for advancement in the hiring process."}
-                {overall >= 70 && overall < 85 && "This candidate shows a strong overall profile with above-average scores in most trait areas. Minor gaps noted but are consistent with trainable behaviors. Recommended for interview with focused questions on lower-scoring areas."}
-                {overall >= 55 && overall < 70 && "This candidate presents a mixed profile. Strengths exist but are offset by meaningful gaps in key dealer traits. Proceed with caution and use the suggested interview questions to explore potential concerns."}
-                {overall < 55 && "This candidate's behavioral profile raises significant concerns for a dealer role. Low scores across multiple trait areas suggest potential fit challenges. Not recommended without further structured evaluation."}
-              </div>
-            </div>
-
-            {/* Interview Questions */}
-            {interviewQs.length > 0 && (
-              <div className="rpt-section" style={{ marginBottom: 20 }}>
-                <div className="rpt-section-hdr"><div className="rpt-section-lbl">Suggested Interview Questions</div></div>
-                <div style={{ padding: 20 }}>
-                  {interviewQs.map((q, i) => (
-                    <div key={i} style={{ display: "flex", gap: 12, marginBottom: 14, padding: "10px 14px", background: "#F5F0E8", borderRadius: 6, border: "1px solid #E0DBD0" }}>
-                      <span style={{ fontWeight: 700, color: "#C9A84C", flexShrink: 0 }}>{i + 1}.</span>
-                      <span style={{ fontSize: 14, color: "#374151", lineHeight: 1.6 }}>{q}</span>
-                    </div>
-                  ))}
+        {tab==="traits"&&(
+          <div>
+            {traitResults.map(r=>(
+              <div key={r.trait.id} style={{background:C.white,border:`1px solid ${r.redFlags.length>0?C.redBorder:C.border}`,borderRadius:14,padding:"22px 26px",marginBottom:14,boxShadow:C.shadow}}>
+                <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",flexWrap:"wrap",gap:8,marginBottom:10}}>
+                  <div>
+                    <div style={{fontSize:17,fontWeight:700,color:C.text,fontFamily:"'Playfair Display',serif"}}>{r.trait.name}</div>
+                    <div style={{marginTop:6,display:"inline-block",padding:"3px 10px",borderRadius:99,background:traitBg(r.pct),color:traitColor(r.pct),border:`1px solid ${traitBorder(r.pct)}`,fontSize:11,fontWeight:600}}>{traitLabel(r.pct)}</div>
+                  </div>
+                  <div style={{fontFamily:"'Playfair Display',serif",fontSize:36,fontWeight:700,color:traitColor(r.pct)}}>{r.pct}%</div>
                 </div>
+                <ScoreBar pct={r.pct}/>
+                {r.redFlags.length>0&&(
+                  <div style={{marginTop:16,background:C.redBg,border:`1px solid ${C.redBorder}`,borderRadius:10,padding:"14px 16px"}}>
+                    <div style={{color:C.red,fontWeight:700,fontSize:11,letterSpacing:1,textTransform:"uppercase",marginBottom:10}}>🚩 Red Flag{r.redFlags.length>1?"s":""} Detected</div>
+                    {r.redFlags.map((f,i)=>(<div key={i} style={{color:C.red,fontSize:13,marginBottom:6,paddingLeft:12,borderLeft:`2px solid ${C.red}`,lineHeight:1.5}}>"{f}"</div>))}
+                  </div>
+                )}
+              </div>
+            ))}
+          </div>
+        )}
+
+        {tab==="consistency"&&(
+          <div style={{background:C.white,border:`1px solid ${C.border}`,borderRadius:14,padding:"24px",boxShadow:C.shadow}}>
+            <h3 style={{fontFamily:"'Playfair Display',serif",fontSize:20,fontWeight:700,color:C.text,margin:"0 0 8px"}}>Consistency Analysis</h3>
+            <p style={{fontSize:13,color:C.textMuted,margin:"0 0 24px",lineHeight:1.6}}>Paired questions measure the same trait from opposite directions. Large discrepancies may indicate inconsistent self-reporting.</p>
+            {inconsistencies.length===0?(
+              <div style={{textAlign:"center",padding:"40px 0"}}>
+                <div style={{width:56,height:56,borderRadius:"50%",background:C.greenBg,border:`1.5px solid ${C.greenBorder}`,display:"flex",alignItems:"center",justifyContent:"center",fontSize:24,margin:"0 auto 16px"}}>✅</div>
+                <div style={{fontWeight:700,fontSize:17,color:C.green,marginBottom:6}}>No Inconsistencies Detected</div>
+                <div style={{fontSize:13,color:C.textMuted}}>{applicant.name}'s responses appear internally consistent.</div>
+              </div>
+            ):(
+              <div>
+                <div style={{background:C.amberBg,border:`1px solid ${C.amberBorder}`,borderRadius:8,padding:"10px 14px",marginBottom:20,fontSize:13,color:C.amber,fontWeight:600}}>
+                  ⚠ {inconsistencies.length} inconsistent pair{inconsistencies.length>1?"s":""} detected.
+                </div>
+                {inconsistencies.map((inc,i)=>(
+                  <div key={i} style={{background:C.amberBg,border:`1px solid ${C.amberBorder}`,borderRadius:10,padding:"16px 18px",marginBottom:12}}>
+                    <div style={{fontSize:11,letterSpacing:1,textTransform:"uppercase",color:C.amber,fontWeight:700,marginBottom:10}}>{inc.trait} · Pair {i+1}</div>
+                    <div style={{fontSize:13,color:C.textMid,paddingLeft:12,borderLeft:`2px solid ${C.amber}`,marginBottom:6,lineHeight:1.5}}>"{inc.q1}"</div>
+                    <div style={{fontSize:11,color:C.textFaint,textAlign:"center",margin:"6px 0"}}>contradicts ↕</div>
+                    <div style={{fontSize:13,color:C.textMid,paddingLeft:12,borderLeft:`2px solid ${C.amber}`,lineHeight:1.5}}>"{inc.q2}"</div>
+                  </div>
+                ))}
               </div>
             )}
-
-            {/* Actions */}
-            <div style={{ display: "flex", gap: 12, justifyContent: "center", flexWrap: "wrap" }}>
-              <button onClick={() => window.print()} style={{ background: "#C9A84C", color: "#1B2A4A", border: "none", borderRadius: 6, padding: "11px 26px", fontSize: 13, fontWeight: 700, cursor: "pointer" }}>⬇ Print Report</button>
-              <button onClick={onNewCandidate} style={{ background: "#1B2A4A", color: "#C9A84C", border: "none", borderRadius: 6, padding: "11px 26px", fontSize: 13, fontWeight: 700, cursor: "pointer" }}>New Candidate →</button>
-              <button onClick={onBack} style={{ background: "transparent", color: "#6B7280", border: "1px solid #E0DBD0", borderRadius: 6, padding: "11px 26px", fontSize: 13, fontWeight: 700, cursor: "pointer" }}>← Dashboard</button>
-            </div>
-          </>
+          </div>
         )}
+
+        {tab==="interview"&&(
+          <div>
+            <div style={{background:C.white,border:`1px solid ${C.border}`,borderRadius:14,padding:"24px",marginBottom:16,boxShadow:C.shadow}}>
+              <h3 style={{fontFamily:"'Playfair Display',serif",fontSize:20,fontWeight:700,color:C.text,margin:"0 0 8px"}}>Suggested Interview Questions</h3>
+              <p style={{fontSize:13,color:C.textMuted,margin:"0 0 24px",lineHeight:1.6}}>Generated for traits scoring below 70% or triggering red flags.</p>
+              {interviewQs.length===0?(
+                <div style={{textAlign:"center",padding:"40px 0"}}>
+                  <div style={{fontWeight:700,fontSize:17,color:C.green}}>No Focus Areas Flagged</div>
+                </div>
+              ):(
+                interviewQs.map((group,i)=>(
+                  <div key={i} style={{marginBottom:24}}>
+                    <div style={{fontSize:14,fontWeight:700,color:C.gold,fontFamily:"'Playfair Display',serif",paddingBottom:8,borderBottom:`1px solid ${C.goldBorder}`,marginBottom:12}}>{group.traitName}</div>
+                    {group.questions.map((q,j)=>(
+                      <div key={j} style={{display:"flex",gap:12,marginBottom:10,alignItems:"flex-start",padding:"10px 14px",background:C.bg,borderRadius:8,border:`1px solid ${C.border}`}}>
+                        <span style={{fontWeight:700,color:C.gold,fontSize:13,flexShrink:0,minWidth:18}}>{j+1}.</span>
+                        <span style={{fontSize:13,color:C.textMid,lineHeight:1.6}}>{q}</span>
+                      </div>
+                    ))}
+                  </div>
+                ))
+              )}
+            </div>
+            <div style={{background:C.goldBg,border:`1px solid ${C.goldBorder}`,borderRadius:12,padding:"16px 20px"}}>
+              <p style={{fontSize:12,color:C.textMid,margin:0,lineHeight:1.7}}><strong style={{color:C.gold}}>Interviewer Tip:</strong> Listen for specific past examples (S-T-A-R format), emotional regulation under pressure, and alignment with casino floor expectations.</p>
+            </div>
+          </div>
+        )}
+
+        <HRPdfButton applicant={applicant} results={results}/>
+        <p style={{fontSize:11,color:C.textFaint,textAlign:"center",marginTop:16}}>CDAT © {new Date().getFullYear()} · Confidential · For authorized personnel only</p>
       </div>
-    </div></>
+    </div>
   );
 }
 
 // ── ADMIN DASHBOARD ───────────────────────────────────────────────────────────
-function AdminDashboard({ onClose }) {
-  const [codes, setCodes] = useState({});
-  const [loading, setLoading] = useState(true);
-  const [newCode, setNewCode] = useState("");
-  const [newName, setNewName] = useState("");
-  const [newContact, setNewContact] = useState("");
-  const [newEmail, setNewEmail] = useState("");
-  const [newPlan, setNewPlan] = useState("trial");
-  const [msg, setMsg] = useState("");
+function AdminDashboard({onClose}){
+  const [codes,setCodes]=useState({});
+  const [loading,setLoading]=useState(true);
+  const [newCode,setNewCode]=useState("");
+  const [newName,setNewName]=useState("");
+  const [newContact,setNewContact]=useState("");
+  const [newEmail,setNewEmail]=useState("");
+  const [newPlan,setNewPlan]=useState("trial");
+  const [msg,setMsg]=useState("");
 
-  async function refresh() {
-    setLoading(true);
-    const data = await getAllCodes();
-    setCodes(data);
-    setLoading(false);
-  }
+  async function refresh(){setLoading(true);const data=await getAllCodes();setCodes(data);setLoading(false);}
+  useEffect(()=>{refresh();},[]);
 
-  useEffect(() => { refresh(); }, []);
-
-  async function addCode() {
-    if (!newCode.trim() || !newName.trim()) { setMsg("Code and property name are required."); return; }
-    const key = newCode.trim().toUpperCase();
-    if (codes[key]) { setMsg(`Code ${key} already exists.`); return; }
-    const pin = genPin();
-    try {
-      await createCode({
-        code: key, propertyName: newName.trim(),
-        contactName: newContact.trim(), email: newEmail.trim(),
-        plan: newPlan, hrPin: pin, freeLimit: FREE_LIMIT,
-      });
+  async function addCode(){
+    if(!newCode.trim()||!newName.trim()){setMsg("Code and property name are required.");return;}
+    const key=newCode.trim().toUpperCase();
+    if(codes[key]){setMsg(`Code ${key} already exists.`);return;}
+    const pin=genPin();
+    try{
+      await createCode({code:key,propertyName:newName.trim(),contactName:newContact.trim(),email:newEmail.trim(),plan:newPlan,hrPin:pin,freeLimit:FREE_LIMIT});
       setMsg(`✓ Code ${key} created. HR PIN: ${pin}`);
-      setNewCode(""); setNewName(""); setNewContact(""); setNewEmail(""); setNewPlan("trial");
+      setNewCode("");setNewName("");setNewContact("");setNewEmail("");setNewPlan("trial");
       refresh();
-    } catch(e) { setMsg("Error creating code. Please try again."); }
+    }catch(e){setMsg("Error creating code. Please try again.");}
   }
 
-  async function deleteCode(key) {
-    if (!window.confirm(`Delete code ${key}?`)) return;
-    await deleteCodeFromDB(key);
-    refresh();
-  }
+  async function deleteCode(key){if(!window.confirm(`Delete code ${key}?`))return;await deleteCodeFromDB(key);refresh();}
+  async function resetUsage(key){await resetUsageInDB(key);refresh();}
+  async function upgradeCode(key){await upgradeCodeInDB(key);refresh();}
 
-  async function resetUsage(key) {
-    await resetUsageInDB(key);
-    refresh();
-  }
+  const entries=Object.values(codes);
+  const totalUsed=entries.reduce((a,r)=>a+(r.used||0),0);
+  const activeProps=entries.filter(r=>(r.used||0)>0).length;
+  const trialExpired=entries.filter(r=>r.plan==="trial"&&(r.used||0)>=(r.freeLimit||FREE_LIMIT)).length;
 
-  async function upgradeCode(key) {
-    await upgradeCodeInDB(key);
-    refresh();
-  }
+  if(loading&&entries.length===0)return(<><style>{SUITE_STYLES}</style><div style={{minHeight:"100vh",background:"#0e1a2b",display:"flex",alignItems:"center",justifyContent:"center"}}><div style={{textAlign:"center",color:"#c9a84c",fontFamily:"'Cinzel',serif",fontSize:".72rem",letterSpacing:".3em"}}>LOADING...</div></div></>);
 
-  const entries = Object.values(codes);
-  const totalUsed = entries.reduce((a, r) => a + (r.used || 0), 0);
-  const activeProps = entries.filter(r => (r.used || 0) > 0).length;
-  const trialExpired = entries.filter(r => r.plan === "trial" && (r.used || 0) >= (r.freeLimit || FREE_LIMIT)).length;
-
-  if (loading && entries.length === 0) return (
-    <><style>{SUITE_STYLES}</style>
-    <div style={{ minHeight: "100vh", background: "#0e1a2b", display: "flex", alignItems: "center", justifyContent: "center" }}>
-      <div style={{ textAlign: "center", color: "#c9a84c", fontFamily: "'Cinzel',serif", fontSize: ".72rem", letterSpacing: ".3em" }}>LOADING...</div>
-    </div></>
-  );
-
-  return (
+  return(
     <><style>{SUITE_STYLES}</style>
     <div className="admin-wrap">
       <div className="hdr">
         <div><div className="hdr-eyebrow">CasinoPro Solutions</div><div className="hdr-title">Admin Dashboard</div></div>
-        <div style={{ display: "flex", gap: 10 }}>
+        <div style={{display:"flex",gap:10}}>
           <div className="hdr-badge">{entries.length} Properties</div>
-          <button onClick={onClose} className="btn btn-ghost" style={{ fontSize: ".6rem" }}>← Back to Suite</button>
+          <button onClick={onClose} className="btn btn-ghost" style={{fontSize:".6rem"}}>← Back to Suite</button>
         </div>
       </div>
       <div className="content">
         <div className="stat-grid">
-          {[[entries.length, "Total Properties"],[activeProps, "Active Properties"],[totalUsed, "Total Assessments Run"],[trialExpired, "Trials Expired"]].map(([n, l]) => (
+          {[[entries.length,"Total Properties"],[activeProps,"Active Properties"],[totalUsed,"Total Assessments Run"],[trialExpired,"Trials Expired"]].map(([n,l])=>(
             <div className="stat-card" key={l}><span className="stat-num">{n}</span><span className="stat-lbl">{l}</span></div>
           ))}
         </div>
-        <div style={{ background: "#152338", border: "1px solid rgba(201,168,76,.2)", padding: 24, marginBottom: 32 }}>
-          <div style={{ fontFamily: "'Cinzel',serif", fontSize: ".62rem", letterSpacing: ".3em", color: "#c9a84c", textTransform: "uppercase", marginBottom: 16 }}>Add New Property</div>
-          <div className="form-grid" style={{ marginBottom: 12 }}>
-            {[["Property Code", newCode, setNewCode, "e.g. ARIA2025"], ["Property Name", newName, setNewName, "e.g. Aria Resort"], ["Contact Name", newContact, setNewContact, "HR Director"], ["Contact Email", newEmail, setNewEmail, "hr@casino.com"]].map(([l, v, set, ph]) => (
+        <div style={{background:"#152338",border:"1px solid rgba(201,168,76,.2)",padding:24,marginBottom:32}}>
+          <div style={{fontFamily:"'Cinzel',serif",fontSize:".62rem",letterSpacing:".3em",color:"#c9a84c",textTransform:"uppercase",marginBottom:16}}>Add New Property</div>
+          <div className="form-grid" style={{marginBottom:12}}>
+            {[["Property Code",newCode,setNewCode,"e.g. ARIA2025"],["Property Name",newName,setNewName,"e.g. Aria Resort"],["Contact Name",newContact,setNewContact,"HR Director"],["Contact Email",newEmail,setNewEmail,"hr@casino.com"]].map(([l,v,set,ph])=>(
               <div className="field" key={l}>
                 <label>{l}</label>
-                <input value={v} onChange={e => set(e.target.value)} onInput={l === "Property Code" ? e => e.target.value = e.target.value.toUpperCase() : undefined} placeholder={ph} />
+                <input value={v} onChange={e=>set(e.target.value)} onInput={l==="Property Code"?e=>e.target.value=e.target.value.toUpperCase():undefined} placeholder={ph}/>
               </div>
             ))}
           </div>
-          <div className="field" style={{ maxWidth: 240, marginBottom: 16 }}>
+          <div className="field" style={{maxWidth:240,marginBottom:16}}>
             <label>Plan</label>
-            <select value={newPlan} onChange={e => setNewPlan(e.target.value)}>
+            <select value={newPlan} onChange={e=>setNewPlan(e.target.value)}>
               <option value="trial">Free Trial ({FREE_LIMIT} assessments)</option>
               <option value="paid">Paid — Per Assessment</option>
               <option value="unlimited">Unlimited</option>
             </select>
           </div>
-          {msg && <div style={{ color: "#c9a84c", fontSize: ".82rem", marginBottom: 12, fontFamily: "'Cinzel',serif", letterSpacing: ".05em" }}>{msg}</div>}
-          <button onClick={addCode} className="btn btn-gold" style={{ fontSize: ".62rem" }}>Add Property Code ◆</button>
+          {msg&&<div style={{color:"#c9a84c",fontSize:".82rem",marginBottom:12,fontFamily:"'Cinzel',serif",letterSpacing:".05em"}}>{msg}</div>}
+          <button onClick={addCode} className="btn btn-gold" style={{fontSize:".62rem"}}>Add Property Code ◆</button>
         </div>
-        <div style={{ fontFamily: "'Cinzel',serif", fontSize: ".62rem", letterSpacing: ".3em", color: "#c9a84c", textTransform: "uppercase", marginBottom: 16 }}>Active Properties ({entries.length})</div>
-        {entries.length === 0 ? (
-          <div style={{ textAlign: "center", padding: "40px 0", color: "#8a9db5", fontSize: ".88rem" }}>No property codes yet. Add your first one above.</div>
-        ) : (
-          <div style={{ overflowX: "auto" }}>
+        <div style={{fontFamily:"'Cinzel',serif",fontSize:".62rem",letterSpacing:".3em",color:"#c9a84c",textTransform:"uppercase",marginBottom:16}}>Active Properties ({entries.length})</div>
+        {entries.length===0?(
+          <div style={{textAlign:"center",padding:"40px 0",color:"#8a9db5",fontSize:".88rem"}}>No property codes yet.</div>
+        ):(
+          <div style={{overflowX:"auto"}}>
             <table className="admin-table">
-              <thead>
-                <tr><th>Code</th><th>Property</th><th>HR PIN</th><th>Plan</th><th>Used</th><th>Remaining</th><th>Last Used</th><th>Actions</th></tr>
-              </thead>
+              <thead><tr><th>Code</th><th>Property</th><th>HR PIN</th><th>Plan</th><th>Used</th><th>Remaining</th><th>Last Used</th><th>Actions</th></tr></thead>
               <tbody>
-                {entries.map(rec => {
-                  const limit = rec.plan === "unlimited" ? Infinity : (rec.freeLimit || FREE_LIMIT);
-                  const remaining = rec.plan === "unlimited" ? "∞" : Math.max(0, limit - (rec.used || 0));
-                  const pct = rec.plan === "unlimited" ? 0 : Math.min(100, ((rec.used || 0) / limit) * 100);
-                  const expired = rec.plan === "trial" && remaining === 0;
-                  const remainColor = remaining === "∞" ? "#c9a84c" : remaining <= 2 ? "#C62828" : remaining <= WARN_AT ? "#E65100" : "#2E7D32";
-                  return (
+                {entries.map(rec=>{
+                  const limit=rec.plan==="unlimited"?Infinity:(rec.freeLimit||FREE_LIMIT);
+                  const remaining=rec.plan==="unlimited"?"∞":Math.max(0,limit-(rec.used||0));
+                  const pct=rec.plan==="unlimited"?0:Math.min(100,((rec.used||0)/limit)*100);
+                  const expired=rec.plan==="trial"&&remaining===0;
+                  const isPaid=rec.plan==="paid"||rec.plan==="unlimited";
+                  const remainColor=remaining==="∞"?"#c9a84c":remaining<=2?"#C62828":remaining<=WARN_AT?"#E65100":"#2E7D32";
+                  return(
                     <tr key={rec.code}>
-                      <td><strong style={{ color: "#c9a84c", fontFamily: "'Cinzel',serif", letterSpacing: ".1em" }}>{rec.code}</strong></td>
+                      <td><strong style={{color:"#c9a84c",fontFamily:"'Cinzel',serif",letterSpacing:".1em"}}>{rec.code}</strong></td>
                       <td>
-                        <div style={{ color: "#f7f2e8", fontWeight: 600 }}>{rec.propertyName}</div>
-                        {rec.contactName && <div style={{ fontSize: ".78rem", color: "#8a9db5" }}>{rec.contactName}</div>}
-                        {rec.email && <div style={{ fontSize: ".72rem", color: "#8a9db5" }}>{rec.email}</div>}
+                        <div style={{color:"#f7f2e8",fontWeight:600}}>{rec.propertyName}</div>
+                        {rec.contactName&&<div style={{fontSize:".78rem",color:"#8a9db5"}}>{rec.contactName}</div>}
+                        {rec.email&&<div style={{fontSize:".72rem",color:"#8a9db5"}}>{rec.email}</div>}
                       </td>
-                      <td><strong style={{ fontFamily: "'Playfair Display',serif", fontSize: 15, color: "#c9a84c" }}>{rec.hrPin}</strong></td>
-                      <td><span style={{ fontSize: ".72rem", fontFamily: "'Cinzel',serif", letterSpacing: ".1em", textTransform: "uppercase", color: expired ? "#C62828" : rec.plan === "unlimited" ? "#c9a84c" : "#d4c9b0" }}>{expired ? "EXPIRED" : rec.plan}</span></td>
+                      <td><strong style={{fontFamily:"'Playfair Display',serif",fontSize:15,color:"#c9a84c"}}>{rec.hrPin}</strong></td>
+                      <td><span style={{fontSize:".72rem",fontFamily:"'Cinzel',serif",letterSpacing:".1em",textTransform:"uppercase",color:expired?"#C62828":isPaid?"#c9a84c":"#d4c9b0"}}>{expired?"EXPIRED":rec.plan}</span></td>
                       <td>
-                        <div style={{ fontSize: 15, fontWeight: 700, color: "#f7f2e8" }}>{rec.used || 0}</div>
-                        {rec.plan !== "unlimited" && <div style={{ marginTop: 4, height: 3, background: "rgba(201,168,76,.1)", width: 60 }}><div style={{ height: 3, background: expired ? "#C62828" : "#c9a84c", width: `${pct}%` }} /></div>}
+                        <div style={{fontSize:15,fontWeight:700,color:"#f7f2e8"}}>{rec.used||0}</div>
+                        {rec.plan!=="unlimited"&&<div style={{marginTop:4,height:3,background:"rgba(201,168,76,.1)",width:60}}><div style={{height:3,background:expired?"#C62828":"#c9a84c",width:`${pct}%`}}/></div>}
                       </td>
-                      <td><span style={{ color: remainColor, fontWeight: 700, fontSize: 15 }}>{remaining}</span></td>
-                      <td style={{ fontSize: ".72rem", color: "#8a9db5" }}>{rec.lastUsed ? new Date(rec.lastUsed).toLocaleDateString() : "Never"}</td>
+                      <td><span style={{color:remainColor,fontWeight:700,fontSize:15}}>{remaining}</span></td>
+                      <td style={{fontSize:".72rem",color:"#8a9db5"}}>{rec.lastUsed?new Date(rec.lastUsed).toLocaleDateString():"Never"}</td>
                       <td>
-                        <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
-                          <button onClick={() => resetUsage(rec.code)} className="btn" style={{ background: "rgba(201,168,76,.1)", border: "1px solid rgba(201,168,76,.2)", color: "#c9a84c", padding: "4px 10px", fontSize: ".62rem", fontFamily: "'Cinzel',serif", letterSpacing: ".08em" }}>Reset</button>
-                          {rec.plan === "trial" && <button onClick={() => upgradeCode(rec.code)} className="btn" style={{ background: "rgba(46,125,50,.1)", border: "1px solid rgba(46,125,50,.3)", color: "#4caf50", padding: "4px 10px", fontSize: ".62rem", fontFamily: "'Cinzel',serif", letterSpacing: ".08em" }}>Upgrade</button>}
-                          <button onClick={() => deleteCode(rec.code)} className="btn btn-danger" style={{ padding: "4px 10px", fontSize: ".62rem", fontFamily: "'Cinzel',serif", letterSpacing: ".08em" }}>Delete</button>
+                        <div style={{display:"flex",gap:6,flexWrap:"wrap"}}>
+                          <button onClick={()=>resetUsage(rec.code)} className="btn" style={{background:"rgba(201,168,76,.1)",border:"1px solid rgba(201,168,76,.2)",color:"#c9a84c",padding:"4px 10px",fontSize:".62rem",fontFamily:"'Cinzel',serif",letterSpacing:".08em"}}>Reset</button>
+                          {rec.plan==="trial"&&<button onClick={()=>upgradeCode(rec.code)} className="btn" style={{background:"rgba(46,125,50,.1)",border:"1px solid rgba(46,125,50,.3)",color:"#4caf50",padding:"4px 10px",fontSize:".62rem",fontFamily:"'Cinzel',serif",letterSpacing:".08em"}}>Upgrade</button>}
+                          <button onClick={()=>deleteCode(rec.code)} className="btn btn-danger" style={{padding:"4px 10px",fontSize:".62rem",fontFamily:"'Cinzel',serif",letterSpacing:".08em"}}>Delete</button>
                         </div>
                       </td>
                     </tr>
@@ -804,125 +1008,111 @@ function AdminDashboard({ onClose }) {
 }
 
 // ── MAIN APP ──────────────────────────────────────────────────────────────────
-export default function App() {
-  const [phase, setPhase] = useState("codegate");
-  const [property, setProperty] = useState(null);
-  const [propertyCode, setPropertyCode] = useState("");
-  const [codeInput, setCodeInput] = useState("");
-  const [codeError, setCodeError] = useState("");
-  const [logoClickCount, setLogoClickCount] = useState(0);
-  const [cdatAnswers, setCdatAnswers] = useState(null);
-  const topRef = useRef(null);
-  const scrollTop = () => topRef.current?.scrollIntoView({ behavior: "smooth" });
+export default function App(){
+  const [phase,setPhase]=useState("codegate");
+  const [property,setProperty]=useState(null);
+  const [propertyCode,setPropertyCode]=useState("");
+  const [codeInput,setCodeInput]=useState("");
+  const [codeError,setCodeError]=useState("");
+  const [codeLoading,setCodeLoading]=useState(false);
+  const [logoClickCount,setLogoClickCount]=useState(0);
+  const [applicant,setApplicant]=useState(null);
+  const [shuffledQs,setShuffledQs]=useState([]);
+  const [results,setResults]=useState(null);
+  const startRef=useRef(null);
+  const topRef=useRef(null);
+  const scrollTop=()=>topRef.current?.scrollIntoView({behavior:"smooth"});
 
-  function handleLogoClick() {
-    const next = logoClickCount + 1;
-    setLogoClickCount(next);
-    if (next >= 3) { setLogoClickCount(0); setPhase("admin"); }
-  }
+  function handleLogoClick(){const next=logoClickCount+1;setLogoClickCount(next);if(next>=3){setLogoClickCount(0);setPhase("admin");}}
 
-  const [codeLoading, setCodeLoading] = useState(false);
-
-  async function handleEnterCode() {
-    const code = codeInput.trim().toUpperCase();
-    if (!code) { setCodeError("Please enter your property code."); return; }
-    if (code === ADMIN_PIN.toUpperCase()) { setPhase("admin"); return; }
+  async function handleEnterCode(){
+    const code=codeInput.trim().toUpperCase();
+    if(!code){setCodeError("Please enter your property code.");return;}
+    if(code===ADMIN_PIN.toUpperCase()){setPhase("admin");return;}
     setCodeLoading(true);
-    const rec = await getCodeFromDB(code);
+    const rec=await getCodeFromDB(code);
     setCodeLoading(false);
-    if (!rec) { setCodeError("Code not recognized. Please contact CasinoPro Solutions."); return; }
-    const limit = rec.plan === "unlimited" ? Infinity : (rec.freeLimit || FREE_LIMIT);
-    if (rec.plan === "trial" && (rec.used || 0) >= limit) {
-      setProperty(rec); setPropertyCode(code); setPhase("upgrade"); return;
-    }
-    setProperty(rec); setPropertyCode(code); setPhase("suite"); scrollTop();
+    if(!rec){setCodeError("Code not recognized. Please contact CasinoPro Solutions.");return;}
+    const limit=rec.plan==="unlimited"?Infinity:(rec.freeLimit||FREE_LIMIT);
+    if(rec.plan==="trial"&&(rec.used||0)>=limit){setProperty(rec);setPropertyCode(code);setPhase("upgrade");return;}
+    setProperty(rec);setPropertyCode(code);setPhase("suite");scrollTop();
   }
 
-  async function launchCDAT() {
+  async function launchCDAT(){
     await incrementUsageInDB(propertyCode);
-    const updated = await getCodeFromDB(propertyCode);
+    const updated=await getCodeFromDB(propertyCode);
     setProperty(updated);
-    setCdatAnswers(null);
-    setPhase("cdat");
-    scrollTop();
+    setApplicant(null);setResults(null);
+    setPhase("cdat-welcome");scrollTop();
   }
 
-  function handleCDATComplete(answers) {
-    setCdatAnswers(answers);
-    setPhase("cdat-report");
-    scrollTop();
+  function handleWelcomeContinue(formData){
+    setApplicant(formData);
+    setShuffledQs(shuffle(TRAITS.flatMap(t=>t.questions)));
+    startRef.current=Date.now();
+    setPhase("cdat-assessment");scrollTop();
   }
 
-  function handleNewCandidate() {
-    setCdatAnswers(null);
-    setPhase("suite");
-    scrollTop();
+  function handleComplete(answers){
+    const elapsed=Math.round((Date.now()-startRef.current)/1000);
+    const r={...calcResults(answers),timeTaken:elapsed};
+    setResults(r);
+    setPhase("cdat-report");scrollTop();
   }
 
-  if (phase === "admin") return <AdminDashboard onClose={() => setPhase("codegate")} />;
+  function handleNewCandidate(){setApplicant(null);setResults(null);setPhase("suite");scrollTop();}
 
-  if (phase === "cdat") return (
-    <CDATAssessment
-      onComplete={handleCDATComplete}
-      onBack={() => setPhase("suite")}
-    />
-  );
+  if(phase==="admin")return <AdminDashboard onClose={()=>setPhase("codegate")}/>;
+  if(phase==="cdat-welcome")return <CDATWelcome onContinue={handleWelcomeContinue} onBack={()=>setPhase("suite")}/>;
+  if(phase==="cdat-assessment")return <CDATAssessment questions={shuffledQs} applicant={applicant} onComplete={handleComplete} onExpire={()=>handleComplete({})}/>;
+  if(phase==="cdat-report")return <CDATReport results={results} applicant={applicant} property={property} onBack={()=>setPhase("suite")} onNewCandidate={handleNewCandidate}/>;
 
-  if (phase === "cdat-report") return (
-    <CDATReport
-      answers={cdatAnswers}
-      property={property}
-      onBack={() => setPhase("suite")}
-      onNewCandidate={handleNewCandidate}
-    />
-  );
-
-  if (phase === "upgrade") return (
+  if(phase==="upgrade")return(
     <><style>{SUITE_STYLES}</style>
     <div className="upgrade-wrap">
       <div className="hdr"><div><div className="hdr-eyebrow">CasinoPro Solutions</div><div className="hdr-title">Assessment Suite</div></div><div className="hdr-badge">Trial Complete</div></div>
-      <div style={{ flex: 1, display: "flex", alignItems: "center", justifyContent: "center", padding: "40px 16px", flexDirection: "column", textAlign: "center" }}>
-        <div style={{ fontSize: 48, marginBottom: 16 }}>🎰</div>
-        <div style={{ fontFamily: "'Playfair Display',serif", fontSize: 26, fontWeight: 700, color: "#f7f2e8", marginBottom: 10 }}>Free Trial Complete</div>
-        <div style={{ fontSize: ".95rem", color: "#8a9db5", marginBottom: 28, lineHeight: 1.7, maxWidth: 460 }}>
-          <strong style={{ color: "#f7f2e8" }}>{property?.propertyName}</strong> has used all {FREE_LIMIT} free assessments.<br />Contact CasinoPro Solutions to continue.
+      <div style={{flex:1,display:"flex",alignItems:"center",justifyContent:"center",padding:"40px 16px",flexDirection:"column",textAlign:"center"}}>
+        <div style={{fontSize:48,marginBottom:16}}>🎰</div>
+        <div style={{fontFamily:"'Playfair Display',serif",fontSize:26,fontWeight:700,color:"#f7f2e8",marginBottom:10}}>Free Trial Complete</div>
+        <div style={{fontSize:".95rem",color:"#8a9db5",marginBottom:28,lineHeight:1.7,maxWidth:460}}>
+          <strong style={{color:"#f7f2e8"}}>{property?.propertyName}</strong> has used all {FREE_LIMIT} free assessments.<br/>Contact CasinoPro Solutions to continue.
         </div>
-        <a href="mailto:rocky@casinoprosolutions.com?subject=Assessment Suite Upgrade" style={{ background: "#c9a84c", color: "#0e1a2b", padding: "13px 32px", fontSize: ".72rem", fontFamily: "'Cinzel',serif", letterSpacing: ".15em", textDecoration: "none", fontWeight: 700, textTransform: "uppercase" }}>Contact Rocky to Upgrade ◆</a>
+        <a href="mailto:rocky@casinoprosolutions.com?subject=Assessment Suite Upgrade" style={{background:"#c9a84c",color:"#0e1a2b",padding:"13px 32px",fontSize:".72rem",fontFamily:"'Cinzel',serif",letterSpacing:".15em",textDecoration:"none",fontWeight:700,textTransform:"uppercase"}}>Contact Rocky to Upgrade ◆</a>
       </div>
     </div></>
   );
 
-  if (phase === "codegate") return (
+  if(phase==="codegate")return(
     <><style>{SUITE_STYLES}</style>
     <div className="gate-wrap" ref={topRef}>
       <div className="hdr">
-        <div onClick={handleLogoClick} style={{ cursor: "pointer" }}>
+        <div onClick={handleLogoClick} style={{cursor:"pointer"}}>
           <div className="hdr-eyebrow">CasinoPro Solutions</div>
           <div className="hdr-title">Assessment Suite</div>
         </div>
         <div className="hdr-badge">Property Access</div>
       </div>
       <div className="gate-center">
-        <div style={{ width: "100%", maxWidth: 460 }}>
-          <div style={{ textAlign: "center", marginBottom: 32 }}>
-            <div style={{ width: 60, height: 60, background: "#152338", border: "1px solid rgba(201,168,76,.2)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 28, margin: "0 auto 16px" }}>🏢</div>
-            <div style={{ fontFamily: "'Playfair Display',serif", fontSize: 26, fontWeight: 700, color: "#f7f2e8", marginBottom: 8 }}>Property Access</div>
-            <div style={{ fontSize: ".88rem", color: "#8a9db5" }}>Enter your casino's property code to begin.</div>
+        <div style={{width:"100%",maxWidth:460}}>
+          <div style={{textAlign:"center",marginBottom:32}}>
+            <div style={{width:60,height:60,background:"#152338",border:"1px solid rgba(201,168,76,.2)",display:"flex",alignItems:"center",justifyContent:"center",fontSize:28,margin:"0 auto 16px"}}>🏢</div>
+            <div style={{fontFamily:"'Playfair Display',serif",fontSize:26,fontWeight:700,color:"#f7f2e8",marginBottom:8}}>Property Access</div>
+            <div style={{fontSize:".88rem",color:"#8a9db5"}}>Enter your casino's property code to begin.</div>
           </div>
           <div className="gate-card">
             <div className="gate-card-hdr">
-              <div style={{ fontFamily: "'Cinzel',serif", fontSize: ".58rem", letterSpacing: ".3em", color: "#c9a84c", textTransform: "uppercase", marginBottom: 6 }}>CasinoPro Solutions Suite</div>
-              <div style={{ fontSize: ".82rem", color: "rgba(255,255,255,.6)" }}>CDAT · DPAT — Dealer Assessment Tools</div>
+              <div style={{fontFamily:"'Cinzel',serif",fontSize:".58rem",letterSpacing:".3em",color:"#c9a84c",textTransform:"uppercase",marginBottom:6}}>CasinoPro Solutions Suite</div>
+              <div style={{fontSize:".82rem",color:"rgba(255,255,255,.6)"}}>CDAT · DPAT — Dealer Assessment Tools</div>
             </div>
             <div className="gate-card-body">
-              <div style={{ fontFamily: "'Cinzel',serif", fontSize: ".55rem", letterSpacing: ".2em", color: "#8a9db5", textTransform: "uppercase", marginBottom: 8 }}>Property Code</div>
+              <div style={{fontFamily:"'Cinzel',serif",fontSize:".55rem",letterSpacing:".2em",color:"#8a9db5",textTransform:"uppercase",marginBottom:8}}>Property Code</div>
               <input className="gate-input" type="text" placeholder="e.g. ARIA2025" value={codeInput} maxLength={12}
-                onChange={e => { setCodeInput(e.target.value.toUpperCase()); setCodeError(""); }}
-                onKeyDown={e => e.key === "Enter" && handleEnterCode()} autoFocus />
-              {codeError && <div className="gate-error">⚠ {codeError}</div>}
-              <button className="btn btn-gold" style={{ width: "100%", marginTop: 16, padding: "13px", fontSize: ".72rem" }} onClick={handleEnterCode} disabled={codeLoading}>{codeLoading ? "Checking..." : "Enter →"}</button>
-              <div style={{ fontSize: ".75rem", color: "#8a9db5", textAlign: "center", marginTop: 12 }}>
-                Don't have a code? Contact <strong style={{ color: "#c9a84c" }}>CasinoPro Solutions</strong> to get started.
+                onChange={e=>{setCodeInput(e.target.value.toUpperCase());setCodeError("");}}
+                onKeyDown={e=>e.key==="Enter"&&handleEnterCode()} autoFocus/>
+              {codeError&&<div className="gate-error">⚠ {codeError}</div>}
+              <button className="btn btn-gold" style={{width:"100%",marginTop:16,padding:"13px",fontSize:".72rem"}} onClick={handleEnterCode} disabled={codeLoading}>{codeLoading?"Checking...":"Enter →"}</button>
+              <div style={{fontSize:".75rem",color:"#8a9db5",textAlign:"center",marginTop:12}}>
+                Don't have a code? Contact <strong style={{color:"#c9a84c"}}>CasinoPro Solutions</strong> to get started.
               </div>
             </div>
           </div>
@@ -931,47 +1121,44 @@ export default function App() {
     </div></>
   );
 
-  if (phase === "suite") {
-    const limit = property?.plan === "unlimited" ? Infinity : (property?.freeLimit || FREE_LIMIT);
-    const used = property?.used || 0;
-    const remaining = property?.plan === "unlimited" ? null : Math.max(0, limit - used);
-    const usagePct = property?.plan === "unlimited" ? 0 : Math.min(100, (used / limit) * 100);
-    const remainColor = remaining === null ? "#c9a84c" : remaining <= 2 ? "#C62828" : remaining <= WARN_AT ? "#E65100" : "#2E7D32";
-
-    return (
+  if(phase==="suite"){
+    const limit=property?.plan==="unlimited"?Infinity:(property?.freeLimit||FREE_LIMIT);
+    const used=property?.used||0;
+    const remaining=property?.plan==="unlimited"?null:Math.max(0,limit-used);
+    const usagePct=property?.plan==="unlimited"?0:Math.min(100,(used/limit)*100);
+    const remainColor=remaining===null?"#c9a84c":remaining<=2?"#C62828":remaining<=WARN_AT?"#E65100":"#2E7D32";
+    return(
       <><style>{SUITE_STYLES}</style>
       <div ref={topRef}>
         <div className="hdr">
-          <div onClick={handleLogoClick} style={{ cursor: "pointer" }}>
+          <div onClick={handleLogoClick} style={{cursor:"pointer"}}>
             <div className="hdr-eyebrow">CasinoPro Solutions</div>
             <div className="hdr-title">Assessment Suite</div>
           </div>
-          <div style={{ display: "flex", gap: 10, alignItems: "center" }}>
-            {property?.plan && <div className="hdr-badge">{property.plan === "unlimited" ? "Unlimited" : property.plan.charAt(0).toUpperCase() + property.plan.slice(1)}</div>}
-            <button onClick={() => { setPhase("codegate"); setCodeInput(""); }} className="btn btn-ghost" style={{ fontSize: ".58rem", letterSpacing: ".15em" }}>Sign Out</button>
+          <div style={{display:"flex",gap:10,alignItems:"center"}}>
+            {property?.plan&&<div className="hdr-badge">{property.plan==="unlimited"?"Unlimited":property.plan.charAt(0).toUpperCase()+property.plan.slice(1)}</div>}
+            <button onClick={()=>{setPhase("codegate");setCodeInput("");}} className="btn btn-ghost" style={{fontSize:".58rem",letterSpacing:".15em"}}>Sign Out</button>
           </div>
         </div>
         <div className="content">
           <div className="suite-welcome">
-            <div style={{ fontFamily: "'Cinzel',serif", fontSize: ".62rem", letterSpacing: ".4em", color: "#c9a84c", textTransform: "uppercase", marginBottom: 12 }}>Welcome</div>
-            <div style={{ fontFamily: "'Playfair Display',serif", fontSize: "2rem", fontWeight: 700, color: "#f7f2e8", marginBottom: 8 }}>{property?.propertyName || "Your Property"}</div>
-            <div style={{ fontSize: ".88rem", color: "#8a9db5" }}>Select an assessment to begin.</div>
+            <div style={{fontFamily:"'Cinzel',serif",fontSize:".62rem",letterSpacing:".4em",color:"#c9a84c",textTransform:"uppercase",marginBottom:12}}>Welcome</div>
+            <div style={{fontFamily:"'Playfair Display',serif",fontSize:"2rem",fontWeight:700,color:"#f7f2e8",marginBottom:8}}>{property?.propertyName||"Your Property"}</div>
+            <div style={{fontSize:".88rem",color:"#8a9db5"}}>Select an assessment to begin.</div>
           </div>
-
-          {remaining !== null && (
+          {remaining!==null&&(
             <div className="usage-bar-wrap">
-              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 4 }}>
-                <div style={{ fontFamily: "'Cinzel',serif", fontSize: ".58rem", letterSpacing: ".2em", color: "#8a9db5", textTransform: "uppercase" }}>Assessment Usage</div>
-                <div style={{ fontFamily: "'Cinzel',serif", fontSize: ".62rem", letterSpacing: ".1em", color: remainColor }}>{remaining} remaining of {limit}</div>
+              <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:4}}>
+                <div style={{fontFamily:"'Cinzel',serif",fontSize:".58rem",letterSpacing:".2em",color:"#8a9db5",textTransform:"uppercase"}}>Assessment Usage</div>
+                <div style={{fontFamily:"'Cinzel',serif",fontSize:".62rem",letterSpacing:".1em",color:remainColor}}>{remaining} remaining of {limit}</div>
               </div>
-              <div className="usage-bar"><div className="usage-bar-fill" style={{ width: `${usagePct}%`, background: remainColor }} /></div>
-              {remaining <= WARN_AT && remaining > 0 && <div style={{ fontSize: ".78rem", color: "#E65100", marginTop: 8, fontStyle: "italic" }}>⚠ Running low — contact CasinoPro Solutions to upgrade.</div>}
-              {remaining === 0 && <div style={{ fontSize: ".78rem", color: "#C62828", marginTop: 8, fontStyle: "italic" }}>✕ No assessments remaining. Contact Rocky to continue.</div>}
+              <div className="usage-bar"><div className="usage-bar-fill" style={{width:`${usagePct}%`,background:remainColor}}/></div>
+              {remaining<=WARN_AT&&remaining>0&&<div style={{fontSize:".78rem",color:"#E65100",marginTop:8,fontStyle:"italic"}}>⚠ Running low — contact CasinoPro Solutions to upgrade.</div>}
+              {remaining===0&&<div style={{fontSize:".78rem",color:"#C62828",marginTop:8,fontStyle:"italic"}}>✕ No assessments remaining. Contact Rocky to continue.</div>}
             </div>
           )}
-
           <div className="suite-grid">
-            <div className="suite-card featured" onClick={() => remaining !== 0 && launchCDAT()} style={{ opacity: remaining === 0 ? .5 : 1, cursor: remaining === 0 ? "not-allowed" : "pointer" }}>
+            <div className="suite-card featured" onClick={()=>remaining!==0&&launchCDAT()} style={{opacity:remaining===0?.5:1,cursor:remaining===0?"not-allowed":"pointer"}}>
               <div className="suite-card-badge">◆ Available Now</div>
               <div className="suite-card-name">CDAT</div>
               <div className="suite-card-sub">Casino Dealer Aptitude Assessment Tool</div>
@@ -982,10 +1169,9 @@ export default function App() {
                 <li>Red flag detection & consistency analysis</li>
                 <li>Suggested interview questions</li>
               </ul>
-              <button className="btn btn-gold" style={{ fontSize: ".62rem" }} disabled={remaining === 0}>Launch CDAT →</button>
+              <button className="btn btn-gold" style={{fontSize:".62rem"}} disabled={remaining===0}>Launch CDAT →</button>
             </div>
-
-            <div className="suite-card" onClick={() => remaining !== 0 && window.open("https://dpat-assessment.vercel.app", "_blank")} style={{ opacity: remaining === 0 ? .5 : 1, cursor: remaining === 0 ? "not-allowed" : "pointer" }}>
+            <div className="suite-card" onClick={()=>remaining!==0&&window.open("https://dpat-assessment.vercel.app","_blank")} style={{opacity:remaining===0?.5:1,cursor:remaining===0?"not-allowed":"pointer"}}>
               <div className="suite-card-badge">◆ Available Now</div>
               <div className="suite-card-name">DPAT</div>
               <div className="suite-card-sub">Dealer Performance Aptitude Tool</div>
@@ -996,13 +1182,12 @@ export default function App() {
                 <li>Eagle Dealer™ tier classification</li>
                 <li>Auto-generated PDF report</li>
               </ul>
-              <button className="btn btn-navy" style={{ fontSize: ".62rem" }} disabled={remaining === 0}>Launch DPAT →</button>
+              <button className="btn btn-navy" style={{fontSize:".62rem"}} disabled={remaining===0}>Launch DPAT →</button>
             </div>
           </div>
-
-         <div style={{ textAlign: "center", fontSize: ".75rem", color: "#8a9db5", borderTop: "1px solid rgba(201,168,76,.1)", paddingTop: 24 }}>
-            Both assessments share your property code and HR PIN.<br />
-            Questions? Contact <strong style={{ color: "#c9a84c" }}>rocky@casinoprosolutions.com</strong>
+          <div style={{textAlign:"center",fontSize:".75rem",color:"#8a9db5",borderTop:"1px solid rgba(201,168,76,.1)",paddingTop:24}}>
+            Both assessments share your property code and HR PIN.<br/>
+            Questions? Contact <strong style={{color:"#c9a84c"}}>rocky@casinoprosolutions.com</strong>
           </div>
         </div>
       </div></>
