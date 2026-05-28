@@ -161,8 +161,8 @@ async function generateHRPdf(applicant, results) {
   const bg=[247,248,250],border=[232,234,237];
   const {traitResults,overall,recommendation,totalRedFlags,inconsistencies,interviewQs}=results;
   const mins=Math.floor(results.timeTaken/60),secs=results.timeTaken%60;
-  function recCol(){return recommendation==="RECOMMEND TO HIRE"?green:recommendation==="PROCEED WITH CAUTION"?amber:red;}
-  function traitCol(p){return p>=75?green:p>=55?amber:red;}
+  function recCol(){return recommendation==="EXCEPTIONAL"?green:recommendation==="PROFICIENT"||recommendation==="DEVELOPING"?amber:red;}
+  function traitCol(t){return t>=30?green:t>=22?amber:red;}
   doc.setFillColor(...[17,24,39]);doc.rect(0,0,pw,28,"F");
   doc.setFillColor(...gold);doc.rect(0,26,pw,2,"F");
   doc.setFont("helvetica","bold");doc.setFontSize(18);doc.setTextColor(...white);
@@ -192,7 +192,7 @@ async function generateHRPdf(applicant, results) {
   doc.setFont("helvetica","bold");doc.setFontSize(7);doc.setTextColor(...muted);
   doc.text("OVERALL COMPOSITE SCORE",lm+scoreBoxW/2,y+6,{align:"center"});
   doc.setFont("helvetica","bold");doc.setFontSize(34);doc.setTextColor(...recCol());
-  doc.text(`${overall}%`,lm+scoreBoxW/2,y+22,{align:"center"});
+  doc.text(`${overall}/200`,lm+scoreBoxW/2,y+22,{align:"center"});
   const pillY=y+27;
   doc.setFillColor(...recCol());doc.roundedRect(lm+6,pillY,scoreBoxW-12,7,2,2,"F");
   doc.setFont("helvetica","bold");doc.setFontSize(7);doc.setTextColor(...white);
@@ -208,9 +208,9 @@ async function generateHRPdf(applicant, results) {
     doc.setFont("helvetica","normal");doc.setFontSize(7);doc.setTextColor(...mid);
     doc.text(r.trait.name.length>22?r.trait.name.slice(0,22)+"…":r.trait.name,bx+6,by+2.5);
     doc.setFillColor(...border);doc.roundedRect(barX,by,barW,barH,1,1,"F");
-    doc.setFillColor(...traitCol(r.pct));doc.roundedRect(barX,by,barW*r.pct/100,barH,1,1,"F");
-    doc.setFont("helvetica","bold");doc.setFontSize(7);doc.setTextColor(...traitCol(r.pct));
-    doc.text(`${r.pct}%`,bx+radarBoxW-5,by+2.5,{align:"right"});
+    doc.setFillColor(...traitCol(r.total));doc.roundedRect(barX,by,barW*r.total/40,barH,1,1,"F");
+    doc.setFont("helvetica","bold");doc.setFontSize(7);doc.setTextColor(...traitCol(r.total));
+    doc.text(`${r.total}/40`,bx+radarBoxW-5,by+2.5,{align:"right"});
   });
   y+=44;
   const flags=traitResults.filter(r=>r.redFlags.length>0);
@@ -376,10 +376,12 @@ function calcResults(answers){
     trait.questions.forEach(q=>{
       const raw=answers[q.id];if(!raw)return;
       const scored=scoreQ(q,raw);total+=scored;
-      if(q.redFlag&&scored<=2)redFlags.push(q.text);
+      if(q.redFlag){
+        if(!q.reversed&&raw<=2)redFlags.push(q.text);
+        if(q.reversed&&raw>=4)redFlags.push(q.text);
+      }
     });
-    const pct=Math.round((total/(trait.questions.length*5))*100);
-    return{trait,total,pct,redFlags};
+    return{trait,total,redFlags};
   });
   const inconsistencies=[];
   CONSISTENCY_PAIRS.forEach(([fwdId,revId])=>{
@@ -391,24 +393,25 @@ function calcResults(answers){
     if(Math.abs(fwdScored-revScored)>=3)
       inconsistencies.push({q1:fwdQ.text,q2:revQ.text,trait:TRAITS.find(t=>t.questions.find(q=>q.id===fwdId))?.name});
   });
-  const overall=Math.round(traitResults.reduce((s,r)=>s+r.pct,0)/traitResults.length);
+  const overall=traitResults.reduce((s,r)=>s+r.total,0);
   const totalRedFlags=traitResults.reduce((s,r)=>s+r.redFlags.length,0);
   const interviewQs=[];
   traitResults.forEach(r=>{
-    if(r.pct<70||r.redFlags.length>0)
+    if(r.total<28||r.redFlags.length>0)
       interviewQs.push({traitName:r.trait.name,questions:INTERVIEW_QUESTIONS[r.trait.id]});
   });
   let recommendation,recColor,recBg,recBorder;
-  if(overall>=75&&totalRedFlags===0&&inconsistencies.length===0){recommendation="RECOMMEND TO HIRE";recColor=C.green;recBg=C.greenBg;recBorder=C.greenBorder;}
-  else if(overall>=60&&totalRedFlags<=2&&inconsistencies.length<=2){recommendation="PROCEED WITH CAUTION";recColor=C.amber;recBg=C.amberBg;recBorder=C.amberBorder;}
-  else{recommendation="DO NOT RECOMMEND";recColor=C.red;recBg=C.redBg;recBorder=C.redBorder;}
+  if(overall>=169){recommendation="EXCEPTIONAL";recColor=C.green;recBg=C.greenBg;recBorder=C.greenBorder;}
+  else if(overall>=137){recommendation="PROFICIENT";recColor=C.amber;recBg=C.amberBg;recBorder=C.amberBorder;}
+  else if(overall>=105){recommendation="DEVELOPING";recColor=C.amber;recBg=C.amberBg;recBorder=C.amberBorder;}
+  else{recommendation="NEEDS IMPROVEMENT";recColor=C.red;recBg=C.redBg;recBorder=C.redBorder;}
   return{traitResults,overall,recommendation,recColor,recBg,recBorder,totalRedFlags,inconsistencies,interviewQs};
 }
 
-function traitColor(p){return p>=75?C.green:p>=55?C.amber:C.red;}
-function traitLabel(p){return p>=75?"Strong":p>=55?"Moderate":"Needs Improvement";}
-function traitBg(p){return p>=75?C.greenBg:p>=55?C.amberBg:C.redBg;}
-function traitBorder(p){return p>=75?C.greenBorder:p>=55?C.amberBorder:C.redBorder;}
+function traitColor(t){return t>=30?C.green:t>=22?C.amber:C.red;}
+function traitLabel(t){return t>=30?"Strong":t>=22?"Moderate":"Needs Improvement";}
+function traitBg(t){return t>=30?C.greenBg:t>=22?C.amberBg:C.redBg;}
+function traitBorder(t){return t>=30?C.greenBorder:t>=22?C.amberBorder:C.redBorder;}
 
 // ── TIMER ─────────────────────────────────────────────────────────────────────
 function Timer({seconds,onExpire}){
@@ -437,33 +440,46 @@ function Timer({seconds,onExpire}){
 }
 
 // ── SCORE BAR ─────────────────────────────────────────────────────────────────
-function ScoreBar({pct}){
+function ScoreBar({total}){
   return(
     <div style={{background:C.bg,borderRadius:99,height:8,overflow:"hidden",marginTop:8}}>
-      <div style={{background:traitColor(pct),width:`${pct}%`,height:"100%",borderRadius:99,transition:"width 1.2s cubic-bezier(0.22,1,0.36,1)"}}/>
+      <div style={{background:traitColor(total),width:`${(total/40)*100}%`,height:"100%",borderRadius:99,transition:"width 1.2s cubic-bezier(0.22,1,0.36,1)"}}/>
     </div>
   );
 }
 
-// ── RADAR CHART ───────────────────────────────────────────────────────────────
-function RadarChart({traitResults}){
-  const cx=150,cy=150,r=108;
-  const angles=traitResults.map((_,i)=>(Math.PI*2*i/5)-Math.PI/2);
-  const gridPts=f=>angles.map(a=>[cx+r*f*Math.cos(a),cy+r*f*Math.sin(a)]);
-  const scorePts=traitResults.map((res,i)=>[cx+r*(res.pct/100)*Math.cos(angles[i]),cy+r*(res.pct/100)*Math.sin(angles[i])]);
-  const toPath=pts=>pts.map((p,i)=>`${i===0?"M":"L"}${p[0].toFixed(1)},${p[1].toFixed(1)}`).join(" ")+"Z";
+// ── CATEGORY SUMMARY TABLE ────────────────────────────────────────────────────
+function CategorySummaryTable({traitResults}){
+  const total=traitResults.reduce((s,r)=>s+r.total,0);
   return(
-    <svg viewBox="0 0 300 300" style={{width:"100%",maxWidth:260,display:"block",margin:"0 auto"}}>
-      {[0.25,0.5,0.75,1].map(f=>(<polygon key={f} points={gridPts(f).map(p=>p.join(",")).join(" ")} fill="none" stroke={C.border} strokeWidth="1"/>))}
-      {angles.map((a,i)=>(<line key={i} x1={cx} y1={cy} x2={cx+r*Math.cos(a)} y2={cy+r*Math.sin(a)} stroke={C.border} strokeWidth="1"/>))}
-      <path d={toPath(scorePts)} fill={C.goldBg} stroke={C.gold} strokeWidth="2"/>
-      {scorePts.map((p,i)=>(<circle key={i} cx={p[0]} cy={p[1]} r="5" fill={traitColor(traitResults[i].pct)} stroke={C.white} strokeWidth="1.5"/>))}
-      {traitResults.map((res,i)=>{
-        const lx=cx+(r+22)*Math.cos(angles[i]),ly=cy+(r+22)*Math.sin(angles[i]);
-        return<text key={i} x={lx} y={ly} textAnchor="middle" dominantBaseline="middle" fontSize="10" fontWeight="700" fill={traitColor(res.pct)} fontFamily="'Courier New',monospace">{res.trait.abbr}</text>;
-      })}
-      <text x={cx} y={cy} textAnchor="middle" dominantBaseline="middle" fontSize="11" fontWeight="700" fill={C.gold} fontFamily="'Playfair Display',serif">CDAT</text>
-    </svg>
+    <div style={{width:"100%"}}>
+      <div style={{background:C.gold,borderRadius:"8px 8px 0 0",padding:"10px 16px",textAlign:"center"}}>
+        <span style={{fontFamily:"'Playfair Display',Georgia,serif",fontSize:14,fontWeight:700,color:C.white,letterSpacing:1}}>Category Summary</span>
+      </div>
+      <table style={{width:"100%",borderCollapse:"collapse",border:`1px solid ${C.border}`}}>
+        <thead>
+          <tr style={{background:"#1B2A4A"}}>
+            <th style={{padding:"8px 12px",fontSize:11,fontWeight:700,color:C.white,textAlign:"left",borderRight:`1px solid ${C.border}`}}>Category</th>
+            <th style={{padding:"8px 12px",fontSize:11,fontWeight:700,color:C.white,textAlign:"center",borderRight:`1px solid ${C.border}`}}>Items</th>
+            <th style={{padding:"8px 12px",fontSize:11,fontWeight:700,color:C.white,textAlign:"center"}}>Score (/ 40)</th>
+          </tr>
+        </thead>
+        <tbody>
+          {traitResults.map((r,i)=>(
+            <tr key={r.trait.id} style={{background:i%2===0?C.white:C.bg,borderBottom:`1px solid ${C.border}`}}>
+              <td style={{padding:"8px 12px",fontSize:12,color:C.textMid,borderRight:`1px solid ${C.border}`}}>{r.trait.name}</td>
+              <td style={{padding:"8px 12px",fontSize:12,color:C.textMuted,textAlign:"center",borderRight:`1px solid ${C.border}`}}>8</td>
+              <td style={{padding:"8px 12px",fontSize:13,fontWeight:700,color:traitColor(r.total),textAlign:"center"}}>{r.total}</td>
+            </tr>
+          ))}
+          <tr style={{background:"#1B2A4A"}}>
+            <td style={{padding:"8px 12px",fontSize:12,fontWeight:700,color:C.white,borderRight:`1px solid ${C.border}`}}>Total</td>
+            <td style={{padding:"8px 12px",fontSize:12,fontWeight:700,color:C.white,textAlign:"center",borderRight:`1px solid ${C.border}`}}>40</td>
+            <td style={{padding:"8px 12px",fontSize:14,fontWeight:700,color:C.gold,textAlign:"center"}}>{total} / 200</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
   );
 }
 
@@ -772,23 +788,23 @@ function CDATReport({results,applicant,property,onBack,onNewCandidate}){
             <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:16,marginBottom:20}}>
               <div style={{background:C.white,border:`1.5px solid ${recBorder}`,borderRadius:14,padding:"28px 24px",textAlign:"center",boxShadow:C.shadowMd}}>
                 <div style={{fontSize:11,letterSpacing:2,textTransform:"uppercase",color:C.textFaint,fontWeight:600,marginBottom:12}}>Overall Composite Score</div>
-                <div style={{fontFamily:"'Playfair Display',Georgia,serif",fontSize:64,fontWeight:700,color:recColor,lineHeight:1}}>{overall}<span style={{fontSize:26}}>%</span></div>
+                <div style={{fontFamily:"'Playfair Display',Georgia,serif",fontSize:64,fontWeight:700,color:recColor,lineHeight:1}}>{overall}<span style={{fontSize:22,fontWeight:400}}>/200</span></div>
                 <div style={{margin:"16px auto 0",padding:"9px 20px",borderRadius:99,background:recBg,color:recColor,fontWeight:700,fontSize:11,letterSpacing:2,textTransform:"uppercase",display:"inline-block",border:`1px solid ${recBorder}`}}>{recommendation}</div>
                 {totalRedFlags>0&&<div style={{marginTop:10,fontSize:12,color:C.red,fontWeight:600}}>⚠ {totalRedFlags} red flag{totalRedFlags>1?"s":""}</div>}
                 {inconsistencies.length>0&&<div style={{marginTop:4,fontSize:12,color:C.amber,fontWeight:600}}>🔄 {inconsistencies.length} inconsistenc{inconsistencies.length>1?"ies":"y"}</div>}
               </div>
               <div style={{background:C.white,border:`1px solid ${C.border}`,borderRadius:14,padding:"16px",boxShadow:C.shadow,display:"flex",alignItems:"center",justifyContent:"center"}}>
-                <RadarChart traitResults={traitResults}/>
+                <CategorySummaryTable traitResults={traitResults}/>
               </div>
             </div>
             <div style={{background:C.white,border:`1px solid ${C.border}`,borderRadius:14,padding:"24px",marginBottom:16,boxShadow:C.shadow}}>
               <div style={{fontSize:11,letterSpacing:2,textTransform:"uppercase",color:C.gold,fontWeight:700,marginBottom:18}}>Trait Summary</div>
-              {[...traitResults].sort((a,b)=>b.pct-a.pct).map(r=>(
+              {[...traitResults].sort((a,b)=>b.total-a.total).map(r=>(
                 <div key={r.trait.id} style={{display:"flex",alignItems:"center",gap:16,marginBottom:12}}>
                   <div style={{minWidth:190,fontSize:13,color:C.textMid,fontWeight:500}}>{r.trait.name}</div>
-                  <div style={{flex:1}}><ScoreBar pct={r.pct}/></div>
-                  <div style={{minWidth:42,textAlign:"right",fontWeight:700,fontSize:15,color:traitColor(r.pct)}}>{r.pct}%</div>
-                  <div style={{minWidth:90,padding:"3px 10px",borderRadius:99,background:traitBg(r.pct),color:traitColor(r.pct),border:`1px solid ${traitBorder(r.pct)}`,fontSize:11,fontWeight:600,textAlign:"center"}}>{traitLabel(r.pct)}</div>
+                  <div style={{flex:1}}><ScoreBar total={r.total}/></div>
+                  <div style={{minWidth:52,textAlign:"right",fontWeight:700,fontSize:15,color:traitColor(r.total)}}>{r.total}/40</div>
+                  <div style={{minWidth:90,padding:"3px 10px",borderRadius:99,background:traitBg(r.total),color:traitColor(r.total),border:`1px solid ${traitBorder(r.total)}`,fontSize:11,fontWeight:600,textAlign:"center"}}>{traitLabel(r.total)}</div>
                 </div>
               ))}
             </div>
@@ -802,11 +818,11 @@ function CDATReport({results,applicant,property,onBack,onNewCandidate}){
                 <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",flexWrap:"wrap",gap:8,marginBottom:10}}>
                   <div>
                     <div style={{fontSize:17,fontWeight:700,color:C.text,fontFamily:"'Playfair Display',serif"}}>{r.trait.name}</div>
-                    <div style={{marginTop:6,display:"inline-block",padding:"3px 10px",borderRadius:99,background:traitBg(r.pct),color:traitColor(r.pct),border:`1px solid ${traitBorder(r.pct)}`,fontSize:11,fontWeight:600}}>{traitLabel(r.pct)}</div>
+                    <div style={{marginTop:6,display:"inline-block",padding:"3px 10px",borderRadius:99,background:traitBg(r.total),color:traitColor(r.total),border:`1px solid ${traitBorder(r.total)}`,fontSize:11,fontWeight:600}}>{traitLabel(r.total)}</div>
                   </div>
-                  <div style={{fontFamily:"'Playfair Display',serif",fontSize:36,fontWeight:700,color:traitColor(r.pct)}}>{r.pct}%</div>
+                  <div style={{fontFamily:"'Playfair Display',serif",fontSize:36,fontWeight:700,color:traitColor(r.total)}}>{r.total}<span style={{fontSize:18,fontWeight:400}}>/40</span></div>
                 </div>
-                <ScoreBar pct={r.pct}/>
+                <ScoreBar total={r.total}/>
                 {r.redFlags.length>0&&(
                   <div style={{marginTop:16,background:C.redBg,border:`1px solid ${C.redBorder}`,borderRadius:10,padding:"14px 16px"}}>
                     <div style={{color:C.red,fontWeight:700,fontSize:11,letterSpacing:1,textTransform:"uppercase",marginBottom:10}}>🚩 Red Flag{r.redFlags.length>1?"s":""} Detected</div>
