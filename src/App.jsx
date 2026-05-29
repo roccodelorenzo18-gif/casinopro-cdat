@@ -665,8 +665,47 @@ function HRPdfButton({applicant,results}){
     setStatus("generating");
     generateHRPdf(applicant,results).then(name=>{setFilename(name);setStatus("done");}).catch(()=>setStatus("error"));
   }
+  function handlePrint(){
+    const {traitResults,overall,recommendation,recColor,totalRedFlags,inconsistencies}=results;
+    const domainColor=(t)=>t>=30?"#059669":t>=22?"#D97706":"#DC2626";
+    const html=`<!DOCTYPE html><html><head><meta charset="UTF-8"><title>CDAT — ${applicant.name}</title>
+    <style>*{box-sizing:border-box;margin:0;padding:0}body{font-family:Arial,sans-serif;background:#fff;color:#111827;font-size:13px}
+    @media print{body{-webkit-print-color-adjust:exact;print-color-adjust:exact}.no-print{display:none}}
+    .btn{padding:10px 24px;background:#B8860B;color:#fff;border:none;font-size:13px;font-weight:700;cursor:pointer;border-radius:3px;margin:4px;font-family:Arial,sans-serif}
+    </style></head><body>
+    <div class="no-print" style="text-align:center;padding:16px;background:#FDF8EC;border-bottom:3px solid #B8860B">
+      <button class="btn" onclick="window.print()">🖨 Print This Report</button>
+      <button class="btn" style="background:#111827" onclick="window.close()">✕ Close</button>
+    </div>
+    <div style="background:#111827;padding:24px 36px 20px"><div style="font-size:10px;letter-spacing:3px;color:#B8860B;font-weight:700;margin-bottom:6px">CASINOPRO SOLUTIONS — HR REVIEW</div><div style="font-family:Georgia,serif;font-size:20px;font-weight:700;color:#fff">CDAT — Candidate Assessment Report</div></div>
+    <div style="height:3px;background:#B8860B"></div>
+    <div style="padding:20px 36px">
+      <div style="border:1px solid #E8EAED;border-radius:4px;padding:14px 18px;margin-bottom:14px;background:#F7F8FA;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px">
+        <div><div style="font-size:15px;font-weight:700">${applicant.name}</div><div style="font-size:12px;color:#6B7280;margin-top:2px">${applicant.position} · ${applicant.date}</div></div>
+        <div style="display:flex;gap:20px">${[["Score",`${overall}/200`],["Red Flags",totalRedFlags],["Inconsistencies",inconsistencies.length]].map(([k,v])=>`<div><div style="font-size:9px;letter-spacing:1px;text-transform:uppercase;color:#6B7280;font-weight:700">${k}</div><div style="font-size:13px;font-weight:700">${v}</div></div>`).join("")}</div>
+      </div>
+      <div style="border:2px solid ${recColor};border-radius:4px;padding:16px 20px;margin-bottom:14px;background:${results.recBg};display:flex;align-items:center;gap:20px">
+        <div style="font-family:Georgia,serif;font-size:48px;font-weight:700;color:${recColor};line-height:1">${overall}<span style="font-size:20px">/200</span></div>
+        <div style="font-family:Georgia,serif;font-size:18px;font-weight:700;color:${recColor}">${recommendation}</div>
+      </div>
+      <div style="border:1px solid #E8EAED;border-radius:4px;overflow:hidden;margin-bottom:14px">
+        <div style="background:#111827;padding:8px 16px"><div style="font-size:9px;letter-spacing:2px;text-transform:uppercase;color:#B8860B;font-weight:700">Category Summary</div></div>
+        <table style="width:100%;border-collapse:collapse">
+          <thead><tr style="background:#1B2A4A"><th style="padding:7px 12px;font-size:10px;color:#fff;text-align:left;border-right:1px solid #E8EAED">Category</th><th style="padding:7px 12px;font-size:10px;color:#fff;text-align:center;border-right:1px solid #E8EAED">Items</th><th style="padding:7px 12px;font-size:10px;color:#fff;text-align:center">Score /40</th></tr></thead>
+          <tbody>${traitResults.map((r,i)=>`<tr style="background:${i%2===0?"#fff":"#F7F8FA"};border-bottom:1px solid #E8EAED"><td style="padding:7px 12px;font-size:12px;border-right:1px solid #E8EAED">${r.trait.name}</td><td style="padding:7px 12px;font-size:12px;text-align:center;border-right:1px solid #E8EAED">8</td><td style="padding:7px 12px;font-size:13px;font-weight:700;color:${domainColor(r.total)};text-align:center">${r.total}</td></tr>`).join("")}<tr style="background:#111827"><td style="padding:7px 12px;font-size:12px;font-weight:700;color:#fff;border-right:1px solid #374151">Total</td><td style="padding:7px 12px;font-size:12px;font-weight:700;color:#fff;text-align:center;border-right:1px solid #374151">40</td><td style="padding:7px 12px;font-size:14px;font-weight:700;color:#B8860B;text-align:center">${overall}/200</td></tr></tbody>
+        </table>
+      </div>
+      ${totalRedFlags>0?`<div style="border:1px solid #FECACA;border-radius:4px;overflow:hidden;margin-bottom:14px"><div style="background:#DC2626;padding:8px 16px"><div style="font-size:9px;letter-spacing:2px;text-transform:uppercase;color:#fff;font-weight:700">Red Flags (${totalRedFlags})</div></div><div style="padding:12px 16px">${traitResults.filter(r=>r.redFlags.length>0).map(r=>r.redFlags.map(f=>`<div style="color:#DC2626;font-size:12px;padding:4px 0 4px 10px;border-left:2px solid #DC2626;margin-bottom:4px">"${f}"</div>`).join("")).join("")}</div></div>`:""}
+      <div style="margin-top:20px;padding-top:14px;border-top:2px solid #B8860B;font-size:12px;color:#374151">Evaluator Signature: ________________________________     Date: _______________</div>
+    </div>
+    <div style="background:#111827;padding:8px 36px;display:flex;justify-content:space-between;margin-top:8px"><div style="font-size:9px;color:#888">CDAT © ${new Date().getFullYear()} · CasinoPro Solutions · Confidential</div><div style="font-size:9px;color:#888">${applicant.name} · ${applicant.date}</div></div>
+    </body></html>`;
+    const w=window.open("","_blank","width=800,height=900");
+    if(!w){alert("Please allow popups to print this report.");return;}
+    w.document.write(html);w.document.close();
+  }
   return(
-    <div style={{display:"flex",justifyContent:"center",marginTop:36}}>
+    <div style={{display:"flex",justifyContent:"center",gap:12,marginTop:36,flexWrap:"wrap"}}>
       <div style={{background:status==="done"?C.greenBg:status==="error"?C.amberBg:C.goldBg,border:`1px solid ${status==="done"?C.greenBorder:status==="error"?C.amberBorder:C.goldBorder}`,borderRadius:12,padding:"16px 28px",display:"flex",alignItems:"center",gap:16}}>
         <div>
           <div style={{fontSize:13,fontWeight:600,color:status==="done"?C.green:status==="error"?C.amber:C.gold}}>
@@ -679,6 +718,7 @@ function HRPdfButton({applicant,results}){
         {status==="done"&&<span style={{fontSize:20}}>✅</span>}
         {status==="error"&&<button onClick={handleDownload} style={{background:C.amber,color:C.white,border:"none",borderRadius:8,padding:"10px 20px",fontSize:13,fontWeight:700,cursor:"pointer"}}>Retry</button>}
       </div>
+      <button onClick={handlePrint} style={{background:"#111827",color:C.gold,border:`1px solid ${C.goldBorder}`,borderRadius:12,padding:"16px 28px",fontSize:13,fontWeight:700,cursor:"pointer"}}>🖨 Print Report</button>
     </div>
   );
 }
