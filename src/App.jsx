@@ -25,7 +25,7 @@ async function getAllCodes() {
     const data = await sbFetch("property_codes?select=*");
     const map = {};
     (data || []).forEach(r => {
-      map[r.code] = { code: r.code, propertyName: r.property_name, contactName: r.contact_name, email: r.email, plan: r.plan, hrPin: r.hr_pin, used: r.used, freeLimit: r.free_limit, createdAt: r.created_at, lastUsed: r.last_used };
+      map[r.code] = { code: r.code, propertyName: r.property_name, contactName: r.contact_name, email: r.email, plan: r.plan, hrPin: r.hr_pin, used: r.used, freeLimit: r.free_limit, createdAt: r.created_at, lastUsed: r.last_used, cdatUsed: r.cdat_used||0, dpatUsed: r.dpat_used||0 };
     });
     return map;
   } catch { return {}; }
@@ -36,7 +36,7 @@ async function getCodeFromDB(code) {
     const data = await sbFetch(`property_codes?code=eq.${encodeURIComponent(code.toUpperCase())}&select=*`);
     if (!data || data.length === 0) return null;
     const r = data[0];
-    return { code: r.code, propertyName: r.property_name, contactName: r.contact_name, email: r.email, plan: r.plan, hrPin: r.hr_pin, used: r.used, freeLimit: r.free_limit, createdAt: r.created_at, lastUsed: r.last_used };
+    return { code: r.code, propertyName: r.property_name, contactName: r.contact_name, email: r.email, plan: r.plan, hrPin: r.hr_pin, used: r.used, freeLimit: r.free_limit, createdAt: r.created_at, lastUsed: r.last_used, cdatUsed: r.cdat_used||0, dpatUsed: r.dpat_used||0 };
   } catch { return null; }
 }
 
@@ -56,11 +56,19 @@ async function upgradeCodeInDB(code) {
   return sbFetch(`property_codes?code=eq.${encodeURIComponent(code)}`, { method: "PATCH", body: JSON.stringify({ plan: "unlimited", free_limit: 9999 }) });
 }
 
-async function incrementUsageInDB(code) {
+async function incrementUsageInDB(code, type="cdat") {
   try {
     const rec = await getCodeFromDB(code);
     if (!rec) return;
-    await sbFetch(`property_codes?code=eq.${encodeURIComponent(code.toUpperCase())}`, { method: "PATCH", body: JSON.stringify({ used: (rec.used || 0) + 1, last_used: new Date().toISOString() }) });
+    const field = type === "dpat" ? "dpat_used" : "cdat_used";
+    await sbFetch(`property_codes?code=eq.${encodeURIComponent(code.toUpperCase())}`, {
+      method: "PATCH",
+      body: JSON.stringify({
+        used: (rec.used || 0) + 1,
+        [field]: (rec[field] || 0) + 1,
+        last_used: new Date().toISOString()
+      })
+    });
   } catch {}
 }
 
@@ -1019,7 +1027,7 @@ function AdminDashboard({onClose}){
         ):(
           <div style={{overflowX:"auto"}}>
             <table className="admin-table">
-              <thead><tr><th>Code</th><th>Property</th><th>HR PIN</th><th>Plan</th><th>Used</th><th>Remaining</th><th>Last Used</th><th>Actions</th></tr></thead>
+              <thead><tr><th>Code</th><th>Property</th><th>HR PIN</th><th>Plan</th><th>CDAT</th><th>DPAT</th><th>Total</th><th>Remaining</th><th>Last Used</th><th>Actions</th></tr></thead>
               <tbody>
                 {entries.map(rec=>{
                   const limit=rec.plan==="unlimited"?Infinity:(rec.freeLimit||FREE_LIMIT);
@@ -1038,6 +1046,8 @@ function AdminDashboard({onClose}){
                       </td>
                       <td><strong style={{fontFamily:"'Playfair Display',serif",fontSize:15,color:"#c9a84c"}}>{rec.hrPin}</strong></td>
                       <td><span style={{fontSize:".72rem",fontFamily:"'Cinzel',serif",letterSpacing:".1em",textTransform:"uppercase",color:expired?"#C62828":isPaid?"#c9a84c":"#d4c9b0"}}>{expired?"EXPIRED":rec.plan}</span></td>
+                      <td><div style={{fontSize:15,fontWeight:700,color:"#c9a84c"}}>{rec.cdatUsed||0}</div></td>
+                      <td><div style={{fontSize:15,fontWeight:700,color:"#8a9db5"}}>{rec.dpatUsed||0}</div></td>
                       <td>
                         <div style={{fontSize:15,fontWeight:700,color:"#f7f2e8"}}>{rec.used||0}</div>
                         {rec.plan!=="unlimited"&&<div style={{marginTop:4,height:3,background:"rgba(201,168,76,.1)",width:60}}><div style={{height:3,background:expired?"#C62828":"#c9a84c",width:`${pct}%`}}/></div>}
@@ -1095,7 +1105,7 @@ export default function App(){
   }
 
   async function launchCDAT(){
-    await incrementUsageInDB(propertyCode);
+    await incrementUsageInDB(propertyCode,"cdat");
     const updated=await getCodeFromDB(propertyCode);
     setProperty(updated);
     setApplicant(null);setResults(null);
@@ -1103,7 +1113,7 @@ export default function App(){
   }
 
   async function launchDPAT(){
-    await incrementUsageInDB(propertyCode);
+    await incrementUsageInDB(propertyCode,"dpat");
     const updated=await getCodeFromDB(propertyCode);
     setProperty(updated);
     window.open("https://dpat-assessment.vercel.app","_blank");
