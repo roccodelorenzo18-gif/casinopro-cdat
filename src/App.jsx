@@ -1062,6 +1062,13 @@ export default function App(){
     setPhase("cdat-welcome");scrollTop();
   }
 
+  async function launchDPAT(){
+    await incrementUsageInDB(propertyCode);
+    const updated=await getCodeFromDB(propertyCode);
+    setProperty(updated);
+    window.open("https://dpat-assessment.vercel.app","_blank");
+  }
+
   function handleWelcomeContinue(formData){
     setApplicant(formData);
     setShuffledQs(shuffle(TRAITS.flatMap(t=>t.questions)));
@@ -1174,7 +1181,11 @@ export default function App(){
             </div>
           )}
           <div className="suite-grid">
-            <div className="suite-card featured" onClick={()=>remaining!==0&&launchCDAT()} style={{opacity:remaining===0?.5:1,cursor:remaining===0?"not-allowed":"pointer"}}>
+            <div className={`suite-card${remaining!==0?"":""}`}
+              onClick={()=>remaining!==0&&launchCDAT()}
+              style={{opacity:remaining===0?.5:1,cursor:remaining===0?"not-allowed":"pointer",border:"1px solid rgba(201,168,76,.2)",transition:"border-color .2s,transform .2s"}}
+              onMouseEnter={e=>{if(remaining!==0){e.currentTarget.style.borderColor="#c9a84c";e.currentTarget.style.transform="translateY(-3px)";}}}
+              onMouseLeave={e=>{e.currentTarget.style.borderColor="rgba(201,168,76,.2)";e.currentTarget.style.transform="translateY(0)";}}>
               <div className="suite-card-badge">◆ Available Now</div>
               <div className="suite-card-name">CDAT</div>
               <div className="suite-card-sub">Casino Dealer Aptitude Assessment Tool</div>
@@ -1187,7 +1198,11 @@ export default function App(){
               </ul>
               <button className="btn btn-gold" style={{fontSize:".62rem"}} disabled={remaining===0}>Launch CDAT →</button>
             </div>
-            <div className="suite-card" onClick={()=>remaining!==0&&window.open("https://dpat-assessment.vercel.app","_blank")} style={{opacity:remaining===0?.5:1,cursor:remaining===0?"not-allowed":"pointer"}}>
+            <div className="suite-card"
+              onClick={()=>remaining!==0&&launchDPAT()}
+              style={{opacity:remaining===0?.5:1,cursor:remaining===0?"not-allowed":"pointer",border:"1px solid rgba(201,168,76,.2)",transition:"border-color .2s,transform .2s"}}
+              onMouseEnter={e=>{if(remaining!==0){e.currentTarget.style.borderColor="#c9a84c";e.currentTarget.style.transform="translateY(-3px)";}}}
+              onMouseLeave={e=>{e.currentTarget.style.borderColor="rgba(201,168,76,.2)";e.currentTarget.style.transform="translateY(0)";}}>
               <div className="suite-card-badge">◆ Available Now</div>
               <div className="suite-card-name">DPAT</div>
               <div className="suite-card-sub">Dealer Performance Aptitude Tool</div>
@@ -1198,7 +1213,7 @@ export default function App(){
                 <li>Eagle Dealer™ tier classification</li>
                 <li>Auto-generated PDF report</li>
               </ul>
-              <button className="btn btn-navy" style={{fontSize:".62rem"}} disabled={remaining===0}>Launch DPAT →</button>
+              <button className="btn btn-gold" style={{fontSize:".62rem"}} disabled={remaining===0}>Launch DPAT →</button>
             </div>
           </div>
           <div style={{textAlign:"center",fontSize:".75rem",color:"#8a9db5",borderTop:"1px solid rgba(201,168,76,.1)",paddingTop:24}}>
