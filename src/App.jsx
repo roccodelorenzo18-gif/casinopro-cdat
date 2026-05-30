@@ -169,7 +169,7 @@ async function generateHRPdf(applicant, results) {
   const bg=[247,248,250],border=[232,234,237];
   const {traitResults,overall,recommendation,totalRedFlags,inconsistencies,interviewQs}=results;
   const mins=Math.floor(results.timeTaken/60),secs=results.timeTaken%60;
-  function recCol(){return recommendation==="EXCEPTIONAL"?green:recommendation==="PROFICIENT"||recommendation==="DEVELOPING"?amber:red;}
+  function recCol(){return recommendation==="ELITE DEALER"?green:recommendation==="STRONG DEALER"||recommendation==="DEVELOPING DEALER"?amber:red;}
   function traitCol(t){return t>=30?green:t>=22?amber:red;}
   doc.setFillColor(...[17,24,39]);doc.rect(0,0,pw,28,"F");
   doc.setFillColor(...gold);doc.rect(0,26,pw,2,"F");
@@ -409,10 +409,10 @@ function calcResults(answers){
       interviewQs.push({traitName:r.trait.name,questions:INTERVIEW_QUESTIONS[r.trait.id]});
   });
   let recommendation,recColor,recBg,recBorder;
-  if(overall>=169){recommendation="EXCEPTIONAL";recColor=C.green;recBg=C.greenBg;recBorder=C.greenBorder;}
-  else if(overall>=137){recommendation="PROFICIENT";recColor=C.amber;recBg=C.amberBg;recBorder=C.amberBorder;}
-  else if(overall>=105){recommendation="DEVELOPING";recColor=C.amber;recBg=C.amberBg;recBorder=C.amberBorder;}
-  else{recommendation="NEEDS IMPROVEMENT";recColor=C.red;recBg=C.redBg;recBorder=C.redBorder;}
+  if(overall>=169){recommendation="ELITE DEALER";recColor=C.green;recBg=C.greenBg;recBorder=C.greenBorder;}
+  else if(overall>=137){recommendation="STRONG DEALER";recColor=C.amber;recBg=C.amberBg;recBorder=C.amberBorder;}
+  else if(overall>=105){recommendation="DEVELOPING DEALER";recColor=C.amber;recBg=C.amberBg;recBorder=C.amberBorder;}
+  else{recommendation="HIGH-RISK DEALER";recColor=C.red;recBg=C.redBg;recBorder=C.redBorder;}
   return{traitResults,overall,recommendation,recColor,recBg,recBorder,totalRedFlags,inconsistencies,interviewQs};
 }
 
