@@ -52,9 +52,10 @@ async function resetUsageInDB(code) {
   return sbFetch(`property_codes?code=eq.${encodeURIComponent(code)}`, { method: "PATCH", body: JSON.stringify({ used: 0 }) });
 }
 
-async function upgradeCodeInDB(code) {
-  return sbFetch(`property_codes?code=eq.${encodeURIComponent(code)}`, { method: "PATCH", body: JSON.stringify({ plan: "unlimited", free_limit: 9999 }) });
-}
+async function upgradeCodeInDB(code, plan) {
+    const limit = plan === "trial" ? FREE_LIMIT : 9999;
+    return sbFetch(`property_codes?code=eq.${encodeURIComponent(code)}`, { method: "PATCH", body: JSON.stringify({ plan, free_limit: limit }) });
+  }
 
 async function incrementUsageInDB(code, type="cdat") {
   try {
@@ -956,7 +957,8 @@ function AdminDashboard({onClose}){
   const [newEmail,setNewEmail]=useState("");
   const [newPlan,setNewPlan]=useState("trial");
   const [msg,setMsg]=useState("");
-
+  const [upgradeTarget,setUpgradeTarget]=useState(null);
+  const [selectedPlan,setSelectedPlan]=useState("single");
   async function refresh(){setLoading(true);const data=await getAllCodes();setCodes(data);setLoading(false);}
   useEffect(()=>{refresh();},[]);
 
@@ -975,8 +977,7 @@ function AdminDashboard({onClose}){
 
   async function deleteCode(key){if(!window.confirm(`Delete code ${key}?`))return;await deleteCodeFromDB(key);refresh();}
   async function resetUsage(key){await resetUsageInDB(key);refresh();}
-  async function upgradeCode(key){await upgradeCodeInDB(key);refresh();}
-
+ async function upgradeCode(key,plan){await upgradeCodeInDB(key,plan);setUpgradeTarget(null);refresh();}
   const entries=Object.values(codes);
   const totalUsed=entries.reduce((a,r)=>a+(r.used||0),0);
   const activeProps=entries.filter(r=>(r.used||0)>0).length;
@@ -987,6 +988,27 @@ function AdminDashboard({onClose}){
   return(
     <><style>{SUITE_STYLES}</style>
     <div className="admin-wrap">
+      {upgradeTarget&&(
+        <div style={{position:"fixed",inset:0,background:"rgba(0,0,0,.7)",zIndex:999,display:"flex",alignItems:"center",justifyContent:"center"}}>
+          <div style={{background:"#152338",border:"1px solid rgba(201,168,76,.3)",padding:32,width:"100%",maxWidth:400}}>
+            <div style={{fontFamily:"'Cinzel',serif",fontSize:".62rem",letterSpacing:".3em",color:"#c9a84c",textTransform:"uppercase",marginBottom:8}}>Change Plan</div>
+            <div style={{fontFamily:"'Playfair Display',serif",fontSize:18,color:"#f7f2e8",marginBottom:20}}>{codes[upgradeTarget]?.propertyName}</div>
+            <div className="field" style={{marginBottom:20}}>
+              <label>Select Plan</label>
+              <select value={selectedPlan} onChange={e=>setSelectedPlan(e.target.value)}>
+                <option value="trial">Free Trial (10 assessments)</option>
+                <option value="single">Single Property — $199/mo</option>
+                <option value="multi">Multi-Property — $499/mo</option>
+                <option value="unlimited">Unlimited / Enterprise</option>
+              </select>
+            </div>
+            <div style={{display:"flex",gap:10}}>
+              <button onClick={()=>upgradeCode(upgradeTarget,selectedPlan)} className="btn btn-gold" style={{flex:1,fontSize:".62rem"}}>Save Plan ◆</button>
+              <button onClick={()=>setUpgradeTarget(null)} className="btn btn-ghost" style={{fontSize:".62rem"}}>Cancel</button>
+            </div>
+          </div>
+        </div>
+      )}
       <div className="hdr">
         <div><div className="hdr-eyebrow">CasinoPro Solutions</div><div className="hdr-title">Admin Dashboard</div></div>
         <div style={{display:"flex",gap:10}}>
