@@ -1079,8 +1079,7 @@ function AdminDashboard({onClose}){
                       <td>
                         <div style={{display:"flex",gap:6,flexWrap:"wrap"}}>
                           <button onClick={()=>resetUsage(rec.code)} className="btn" style={{background:"rgba(201,168,76,.1)",border:"1px solid rgba(201,168,76,.2)",color:"#c9a84c",padding:"4px 10px",fontSize:".62rem",fontFamily:"'Cinzel',serif",letterSpacing:".08em"}}>Reset</button>
-                          {rec.plan==="trial"&&<button onClick={()=>upgradeCode(rec.code)} className="btn" style={{background:"rgba(46,125,50,.1)",border:"1px solid rgba(46,125,50,.3)",color:"#4caf50",padding:"4px 10px",fontSize:".62rem",fontFamily:"'Cinzel',serif",letterSpacing:".08em"}}>Upgrade</button>}
-                          <button onClick={()=>deleteCode(rec.code)} className="btn btn-danger" style={{padding:"4px 10px",fontSize:".62rem",fontFamily:"'Cinzel',serif",letterSpacing:".08em"}}>Delete</button>
+                          <button onClick={()=>setUpgradeTarget(rec.code)} className="btn" style={{background:"rgba(46,125,50,.1)",border:"1px solid rgba(46,125,50,.3)",color:"#4caf50",padding:"4px 10px",fontSize:".62rem",fontFamily:"'Cinzel',serif",letterSpacing:".08em"}}>Plan</button>
                         </div>
                       </td>
                     </tr>
