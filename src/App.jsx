@@ -1196,7 +1196,6 @@ export default function App(){
               ← Back to CasinoPro Solutions
             </a>
           </div>
-          </div>
           <div className="gate-card">
             <div className="gate-card-hdr">
               <div style={{fontFamily:"'Cinzel',serif",fontSize:".58rem",letterSpacing:".3em",color:"#c9a84c",textTransform:"uppercase",marginBottom:6}}>CasinoPro Solutions Suite</div>
