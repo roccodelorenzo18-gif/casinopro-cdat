@@ -1192,6 +1192,10 @@ export default function App(){
             <div style={{width:60,height:60,background:"#152338",border:"1px solid rgba(201,168,76,.2)",display:"flex",alignItems:"center",justifyContent:"center",fontSize:28,margin:"0 auto 16px"}}>🏢</div>
             <div style={{fontFamily:"'Playfair Display',serif",fontSize:26,fontWeight:700,color:"#f7f2e8",marginBottom:8}}>Property Access</div>
             <div style={{fontSize:".88rem",color:"#8a9db5"}}>Enter your casino's property code to begin.</div>
+            <a href="https://casinoprosolutions.com" style={{fontSize:".72rem",color:"#8a9db5",textDecoration:"none",display:"inline-block",marginTop:14}}>
+              ← Back to CasinoPro Solutions
+            </a>
+          </div>
           </div>
           <div className="gate-card">
             <div className="gate-card-hdr">
@@ -1206,7 +1210,7 @@ export default function App(){
               {codeError&&<div className="gate-error">⚠ {codeError}</div>}
               <button className="btn btn-gold" style={{width:"100%",marginTop:16,padding:"13px",fontSize:".72rem"}} onClick={handleEnterCode} disabled={codeLoading}>{codeLoading?"Checking...":"Enter →"}</button>
               <div style={{fontSize:".75rem",color:"#8a9db5",textAlign:"center",marginTop:12}}>
-                Don't have a code? Contact <strong style={{color:"#c9a84c"}}>CasinoPro Solutions</strong> to get started.
+                   Don't have a code? Contact <a href="https://casinoprosolutions.com/contact/" style={{color:"#c9a84c",fontWeight:700,textDecoration:"none"}}>CasinoPro Solutions</a> to get started.
               </div>
             </div>
           </div>
